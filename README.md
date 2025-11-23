@@ -26,6 +26,47 @@ This project is a **CLI fork** of [CC-Switch](https://github.com/farion1231/cc-s
 
 ---
 
+## 🚀 Quick Start
+
+### First Run
+
+**Interactive Mode (Recommended)**
+```bash
+cc-switch
+```
+Follow on-screen menus to explore features.
+
+**Command-Line Mode**
+```bash
+cc-switch provider list              # List providers
+cc-switch provider switch <id>       # Switch provider
+cc-switch config show                # View configuration
+```
+
+### Common Workflows
+
+**Switch Provider:**
+```bash
+cc-switch provider list
+cc-switch provider switch my-provider-id
+# Restart Claude Code/Codex/Gemini to apply changes
+```
+
+**Manage MCP Servers:**
+```bash
+cc-switch mcp import --app claude    # Import existing servers
+cc-switch mcp enable mcp-fetch --app codex
+cc-switch mcp sync                   # Sync all
+```
+
+**Manage Prompts:**
+```bash
+cc-switch prompts list
+cc-switch prompts activate coding-assistant
+```
+
+---
+
 ## 📸 Screenshots
 
 <table>
@@ -45,21 +86,26 @@ This project is a **CLI fork** of [CC-Switch](https://github.com/farion1231/cc-s
 
 ### 🎯 Two Usage Modes
 
-**Command-Line Mode**
-```bash
-cc-switch provider switch <id>       # Switch provider
-cc-switch mcp sync                   # Sync MCP servers
-cc-switch prompts activate <id>      # Activate prompt preset
-```
-
-**Interactive Mode**
+**Interactive Mode (Recommended)**
 ```bash
 cc-switch                            # Launch menu-driven interface
+```
+
+**Command-Line Mode**
+```bash
+cc-switch provider switch <id>       # Quick single command execution
+cc-switch mcp sync                   # Sync MCP servers
+cc-switch prompts activate <id>      # Activate prompt preset
 ```
 
 ### 🔌 Provider Management
 
 Manage API configurations for **Claude Code**, **Codex**, and **Gemini**.
+
+**Features:** One-click switching, multi-endpoint support, API key management, speed testing, provider duplication.
+
+<details>
+<summary>View command list</summary>
 
 ```bash
 cc-switch provider list              # List all providers
@@ -70,11 +116,16 @@ cc-switch provider delete <id>       # Delete provider
 cc-switch provider speedtest <id>    # Test API latency
 ```
 
-Features: One-click switching, multi-endpoint support, API key management, speed testing, provider duplication.
+</details>
 
 ### 🛠️ MCP Server Management
 
 Manage Model Context Protocol servers across Claude/Codex/Gemini.
+
+**Features:** Unified management, multi-app support, three transport types (stdio/http/sse), automatic sync, smart TOML parser.
+
+<details>
+<summary>View command list</summary>
 
 ```bash
 cc-switch mcp list                   # List all MCP servers
@@ -83,11 +134,16 @@ cc-switch mcp sync                   # Sync all enabled servers
 cc-switch mcp import --app claude    # Import from config
 ```
 
-Features: Unified management, multi-app support, three transport types (stdio/http/sse), automatic sync, smart TOML parser.
+</details>
 
 ### 💬 Prompts Management
 
 Manage system prompt presets for AI coding assistants.
+
+**Cross-app support:** Claude (`CLAUDE.md`), Codex (`AGENTS.md`), Gemini (`GEMINI.md`).
+
+<details>
+<summary>View command list</summary>
 
 ```bash
 cc-switch prompts list               # List prompt presets
@@ -96,9 +152,14 @@ cc-switch prompts show <id>          # Display full content
 cc-switch prompts delete <id>        # Delete prompt
 ```
 
-Cross-app support: Claude (`CLAUDE.md`), Codex (`AGENTS.md`), Gemini (`GEMINI.md`).
+</details>
 
 ### ⚙️ Configuration Management
+
+Manage configuration backups, imports, and exports.
+
+<details>
+<summary>View command list</summary>
 
 ```bash
 cc-switch config show                # Display configuration
@@ -106,6 +167,8 @@ cc-switch config backup              # Create backup
 cc-switch config export <path>       # Export configuration
 cc-switch config import <path>       # Import configuration
 ```
+
+</details>
 
 ### 🌐 Multi-language Support
 
@@ -116,11 +179,18 @@ Interactive mode supports English and Chinese, language settings are automatical
 
 ### 🔧 Utilities
 
+Shell completions, environment checks, application context switching, and other utilities.
+
+<details>
+<summary>View command list</summary>
+
 ```bash
 cc-switch completions <shell>        # Generate shell completions (bash/zsh/fish/powershell)
 cc-switch env check                  # Check for conflicts
 cc-switch app switch <app>           # Switch application context
 ```
+
+</details>
 
 ---
 
@@ -209,47 +279,6 @@ sudo cp target/release/cc-switch /usr/local/bin/
 
 # Windows
 copy target\release\cc-switch.exe C:\Windows\System32\
-```
-
----
-
-## 🚀 Quick Start
-
-### First Run
-
-**Interactive Mode** (Recommended)
-```bash
-cc-switch
-```
-Follow on-screen menus to explore features.
-
-**Command-Line Mode**
-```bash
-cc-switch provider list              # List providers
-cc-switch provider switch <id>       # Switch provider
-cc-switch config show                # View configuration
-```
-
-### Common Workflows
-
-**Switch Provider:**
-```bash
-cc-switch provider list
-cc-switch provider switch my-provider-id
-# Restart Claude Code/Codex/Gemini to apply changes
-```
-
-**Manage MCP Servers:**
-```bash
-cc-switch mcp import --app claude    # Import existing servers
-cc-switch mcp enable mcp-fetch --app codex
-cc-switch mcp sync                   # Sync all
-```
-
-**Manage Prompts:**
-```bash
-cc-switch prompts list
-cc-switch prompts activate coding-assistant
 ```
 
 ---

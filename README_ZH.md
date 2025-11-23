@@ -26,6 +26,47 @@
 
 ---
 
+## 🚀 快速开始
+
+### 首次运行
+
+**交互模式（推荐）**
+```bash
+cc-switch
+```
+按照屏幕菜单探索功能。
+
+**命令行模式**
+```bash
+cc-switch provider list              # 列出供应商
+cc-switch provider switch <id>       # 切换供应商
+cc-switch config show                # 查看配置
+```
+
+### 常用操作
+
+**切换供应商：**
+```bash
+cc-switch provider list
+cc-switch provider switch my-provider-id
+# 重启 Claude Code/Codex/Gemini 以应用更改
+```
+
+**管理 MCP 服务器：**
+```bash
+cc-switch mcp import --app claude    # 导入现有服务器
+cc-switch mcp enable mcp-fetch --app codex
+cc-switch mcp sync                   # 同步所有
+```
+
+**管理提示词：**
+```bash
+cc-switch prompts list
+cc-switch prompts activate coding-assistant
+```
+
+---
+
 ## 📸 截图预览
 
 <table>
@@ -45,21 +86,26 @@
 
 ### 🎯 两种使用模式
 
-**命令行模式**
-```bash
-cc-switch provider switch <id>       # 切换供应商
-cc-switch mcp sync                   # 同步 MCP 服务器
-cc-switch prompts activate <id>      # 激活提示词预设
-```
-
-**交互模式**
+**交互模式（推荐）**
 ```bash
 cc-switch                            # 启动菜单驱动界面
+```
+
+**命令行模式**
+```bash
+cc-switch provider switch <id>       # 快速执行单个命令
+cc-switch mcp sync                   # 同步 MCP 服务器
+cc-switch prompts activate <id>      # 激活提示词预设
 ```
 
 ### 🔌 供应商管理
 
 管理 **Claude Code**、**Codex** 和 **Gemini** 的 API 配置。
+
+**功能：** 一键切换、多端点支持、API 密钥管理、速度测试、供应商复制。
+
+<details>
+<summary>查看命令列表</summary>
 
 ```bash
 cc-switch provider list              # 列出所有供应商
@@ -70,11 +116,16 @@ cc-switch provider delete <id>       # 删除供应商
 cc-switch provider speedtest <id>    # 测试 API 延迟
 ```
 
-功能：一键切换、多端点支持、API 密钥管理、速度测试、供应商复制。
+</details>
 
 ### 🛠️ MCP 服务器管理
 
 跨 Claude/Codex/Gemini 管理模型上下文协议服务器。
+
+**功能：** 统一管理、多应用支持、三种传输类型（stdio/http/sse）、自动同步、智能 TOML 解析器。
+
+<details>
+<summary>查看命令列表</summary>
 
 ```bash
 cc-switch mcp list                   # 列出所有 MCP 服务器
@@ -83,11 +134,16 @@ cc-switch mcp sync                   # 同步所有已启用服务器
 cc-switch mcp import --app claude    # 从配置导入
 ```
 
-功能：统一管理、多应用支持、三种传输类型（stdio/http/sse）、自动同步、智能 TOML 解析器。
+</details>
 
 ### 💬 Prompts 管理
 
 管理 AI 编码助手的系统提示词预设。
+
+**跨应用支持：** Claude (`CLAUDE.md`)、Codex (`AGENTS.md`)、Gemini (`GEMINI.md`)。
+
+<details>
+<summary>查看命令列表</summary>
 
 ```bash
 cc-switch prompts list               # 列出提示词预设
@@ -96,9 +152,14 @@ cc-switch prompts show <id>          # 显示完整内容
 cc-switch prompts delete <id>        # 删除提示词
 ```
 
-跨应用支持：Claude (`CLAUDE.md`)、Codex (`AGENTS.md`)、Gemini (`GEMINI.md`)。
+</details>
 
 ### ⚙️ 配置管理
+
+管理配置文件的备份、导入和导出。
+
+<details>
+<summary>查看命令列表</summary>
 
 ```bash
 cc-switch config show                # 显示配置
@@ -106,6 +167,8 @@ cc-switch config backup              # 创建备份
 cc-switch config export <path>       # 导出配置
 cc-switch config import <path>       # 导入配置
 ```
+
+</details>
 
 ### 🌐 多语言支持
 
@@ -116,11 +179,18 @@ cc-switch config import <path>       # 导入配置
 
 ### 🔧 实用工具
 
+Shell 补全、环境检查、应用上下文切换等实用功能。
+
+<details>
+<summary>查看命令列表</summary>
+
 ```bash
 cc-switch completions <shell>        # 生成 shell 补全（bash/zsh/fish/powershell）
 cc-switch env check                  # 检查冲突
 cc-switch app switch <app>           # 切换应用上下文
 ```
+
+</details>
 
 ---
 
@@ -210,18 +280,6 @@ sudo cp target/release/cc-switch /usr/local/bin/
 # Windows
 copy target\release\cc-switch.exe C:\Windows\System32\
 ```
-
----
-
-## 🚀 快速开始
-
-### 首次运行
-
-**交互模式**（推荐）
-```bash
-cc-switch
-```
-按照屏幕菜单探索功能。
 
 ---
 
