@@ -213,7 +213,6 @@ jobs:
           name: CC Switch CLI ${{ github.ref_name }}
           draft: false
           prerelease: false
-          generate_release_notes: true
           body: |
             ## CC Switch CLI ${{ github.ref_name }}
 
@@ -221,33 +220,28 @@ jobs:
 
             ### 📦 下载 / Downloads
 
-            | 平台 | 推荐下载 | 备选 |
-            |------|----------|------|
-            | **macOS** | `cc-switch-cli-${{ github.ref_name }}-darwin-universal.tar.gz` | ARM64 / x64 单架构版本 |
-            | **Windows** | `cc-switch-cli-${{ github.ref_name }}-windows-x64.zip` | `.exe` 单文件版 |
-            | **Linux (x64)** | `cc-switch-cli-${{ github.ref_name }}-linux-x64.tar.gz` | 直接二进制 |
-            | **Linux (ARM64)** | `cc-switch-cli-${{ github.ref_name }}-linux-arm64.tar.gz` | 树莓派/ARM 服务器 |
+            | 平台 Platform | 文件 File |
+            |---------------|-----------|
+            | **macOS** (Universal) | `cc-switch-cli-${{ github.ref_name }}-darwin-universal.tar.gz` |
+            | **Windows** (x64) | `cc-switch-cli-${{ github.ref_name }}-windows-x64.zip` |
+            | **Linux** (x64) | `cc-switch-cli-${{ github.ref_name }}-linux-x64.tar.gz` |
+            | **Linux** (ARM64) | `cc-switch-cli-${{ github.ref_name }}-linux-arm64.tar.gz` |
 
             ### 🚀 快速安装
 
             **macOS / Linux:**
             ```bash
-            # 下载并解压 tar.gz
             tar -xzf cc-switch-cli-*.tar.gz
-
-            # 添加执行权限并移动到 PATH
             chmod +x cc-switch
             sudo mv cc-switch /usr/local/bin/
             ```
 
             **Windows:**
             ```powershell
-            # 解压 zip，然后将 cc-switch.exe 移动到 PATH 目录
-            # 或直接运行 cc-switch.exe
+            # 解压 zip 后将 cc-switch.exe 移动到 PATH 目录或直接运行
             ```
 
-            ---
-            💡 **macOS 提示**: 首次运行如遇 "无法验证开发者"，执行：`xattr -cr /usr/local/bin/cc-switch`
+            💡 **macOS 提示**: 如遇 "无法验证开发者"，执行：`xattr -cr /usr/local/bin/cc-switch`
           files: release-assets/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -126,15 +126,77 @@ cc-switch app switch <app>           # Switch application context
 
 ## 📥 Installation
 
-### Build from Source
+### Method 1: Download Pre-built Binaries (Recommended)
+
+Download the latest release from [GitHub Releases](https://github.com/farion1231/cc-switch/releases).
+
+#### macOS
+
+```bash
+# Download Universal Binary (recommended, supports Apple Silicon + Intel)
+curl -LO https://github.com/farion1231/cc-switch/releases/latest/download/cc-switch-cli-v4.0.0-darwin-universal.tar.gz
+
+# Extract
+tar -xzf cc-switch-cli-v4.0.0-darwin-universal.tar.gz
+
+# Add execute permission
+chmod +x cc-switch
+
+# Move to PATH
+sudo mv cc-switch /usr/local/bin/
+
+# If you encounter "cannot be verified" warning
+xattr -cr /usr/local/bin/cc-switch
+```
+
+#### Linux (x64)
+
+```bash
+# Download
+curl -LO https://github.com/farion1231/cc-switch/releases/latest/download/cc-switch-cli-v4.0.0-linux-x64.tar.gz
+
+# Extract
+tar -xzf cc-switch-cli-v4.0.0-linux-x64.tar.gz
+
+# Add execute permission
+chmod +x cc-switch
+
+# Move to PATH
+sudo mv cc-switch /usr/local/bin/
+```
+
+#### Linux (ARM64)
+
+```bash
+# For Raspberry Pi or ARM servers
+curl -LO https://github.com/farion1231/cc-switch/releases/latest/download/cc-switch-cli-v4.0.0-linux-arm64.tar.gz
+tar -xzf cc-switch-cli-v4.0.0-linux-arm64.tar.gz
+chmod +x cc-switch
+sudo mv cc-switch /usr/local/bin/
+```
+
+#### Windows
+
+```powershell
+# Download the zip file
+# https://github.com/farion1231/cc-switch/releases/latest/download/cc-switch-cli-v4.0.0-windows-x64.zip
+
+# After extracting, move cc-switch.exe to a PATH directory, e.g.:
+move cc-switch.exe C:\Windows\System32\
+
+# Or run directly
+.\cc-switch.exe
+```
+
+### Method 2: Build from Source
 
 **Prerequisites:**
 - Rust 1.85+ ([install via rustup](https://rustup.rs/))
 
 **Build:**
 ```bash
-git clone https://github.com/your-username/cc-switch-cli.git
-cd cc-switch-cli/src-tauri
+git clone https://github.com/farion1231/cc-switch.git
+cd cc-switch/src-tauri
 cargo build --release
 
 # Binary location: ./target/release/cc-switch
@@ -143,7 +205,7 @@ cargo build --release
 **Install to System:**
 ```bash
 # macOS/Linux
-cp target/release/cc-switch /usr/local/bin/
+sudo cp target/release/cc-switch /usr/local/bin/
 
 # Windows
 copy target\release\cc-switch.exe C:\Windows\System32\
