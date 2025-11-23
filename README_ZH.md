@@ -146,35 +146,6 @@ cc-switch
 ```
 按照屏幕菜单探索功能。
 
-**命令行模式**
-```bash
-cc-switch provider list              # 列出供应商
-cc-switch provider switch <id>       # 切换供应商
-cc-switch config show                # 查看配置
-```
-
-### 常用工作流
-
-**切换供应商：**
-```bash
-cc-switch provider list
-cc-switch provider switch my-provider-id
-# 重启 Claude Code/Codex/Gemini 以应用更改
-```
-
-**管理 MCP 服务器：**
-```bash
-cc-switch mcp import --app claude    # 导入现有服务器
-cc-switch mcp enable mcp-fetch --app codex
-cc-switch mcp sync                   # 同步所有
-```
-
-**管理提示词：**
-```bash
-cc-switch prompts list
-cc-switch prompts activate coding-assistant
-```
-
 ---
 
 ## 🏗️ 架构
