@@ -2,6 +2,7 @@ use clap::{Parser, Subcommand};
 use clap_complete::Shell;
 
 pub mod commands;
+pub mod i18n;
 pub mod interactive;
 pub mod ui;
 
@@ -12,7 +13,7 @@ use crate::app_config::AppType;
     name = "cc-switch",
     version,
     about = "All-in-One Assistant for Claude Code, Codex & Gemini CLI",
-    long_about = "Unified management for Claude Code, Codex & Gemini CLI provider configurations, MCP servers, Skills extensions, and system prompts."
+    long_about = "Unified management for Claude Code, Codex & Gemini CLI provider configurations, MCP servers, Skills extensions, and system prompts.\n\nRun without arguments to enter interactive mode."
 )]
 pub struct Cli {
     /// Specify the application type
@@ -28,7 +29,7 @@ pub struct Cli {
     pub json: bool,
 
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Option<Commands>,
 }
 
 #[derive(Subcommand)]
