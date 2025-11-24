@@ -78,7 +78,7 @@ fn list_providers(app_type: AppType) -> Result<(), AppError> {
 
     // 创建表格
     let mut table = create_table();
-    table.set_header(vec!["", "Name", "API URL"]);
+    table.set_header(vec!["", "ID", "Name", "API URL"]);
 
     // 按创建时间排序
     let mut provider_list: Vec<_> = providers.into_iter().collect();
@@ -97,7 +97,7 @@ fn list_providers(app_type: AppType) -> Result<(), AppError> {
         let api_url = extract_api_url(&provider.settings_config, &app_type)
             .unwrap_or_else(|| "N/A".to_string());
 
-        table.add_row(vec![current_marker.to_string(), provider.name.clone(), api_url]);
+        table.add_row(vec![current_marker.to_string(), id.clone(), provider.name.clone(), api_url]);
     }
 
     println!("{}", table);
