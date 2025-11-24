@@ -178,8 +178,6 @@ cc-switch completions <shell>        # Generate shell completions (bash/zsh/fish
 # Environment management
 cc-switch env check                  # Check for environment conflicts
 cc-switch env list                   # List environment variables
-cc-switch env set <key> <value>      # Set environment variable
-cc-switch env unset <key>            # Unset environment variable
 ```
 
 ---
@@ -317,30 +315,16 @@ This is usually caused by **environment variable conflicts**. If you have API ke
    cc-switch env list --app claude
    ```
 
-3. If conflicts are found, you can:
-   - Manually remove them from your shell config files (`~/.bashrc`, `~/.zshrc`, etc.)
-   - Or use the unset command (creates automatic backup):
+3. If conflicts are found, manually remove them:
+   - **macOS/Linux**: Edit your shell config file (`~/.bashrc`, `~/.zshrc`, etc.)
      ```bash
-     cc-switch env unset ANTHROPIC_API_KEY --app claude
+     # Find and delete the line with the environment variable
+     nano ~/.zshrc
+     # Or use your preferred text editor: vim, code, etc.
      ```
+   - **Windows**: Open System Properties → Environment Variables and delete the conflicting variables
 
 4. Restart your terminal for changes to take effect.
-
-</details>
-
-<details>
-<summary><b>How do I restore deleted environment variables?</b></summary>
-
-<br>
-
-All deleted environment variables are automatically backed up to `~/.cc-switch/backups/`.
-
-Check backups:
-```bash
-ls ~/.cc-switch/backups/env-backup-*.json
-```
-
-Backups are stored in JSON format with timestamps for easy restoration if needed.
 
 </details>
 

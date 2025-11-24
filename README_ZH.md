@@ -178,8 +178,6 @@ cc-switch completions <shell>        # 生成 shell 补全（bash/zsh/fish/power
 # 环境管理
 cc-switch env check                  # 检查环境冲突
 cc-switch env list                   # 列出环境变量
-cc-switch env set <key> <value>      # 设置环境变量
-cc-switch env unset <key>            # 取消设置环境变量
 ```
 
 ---
@@ -317,30 +315,16 @@ copy target\release\cc-switch.exe C:\Windows\System32\
    cc-switch env list --app claude
    ```
 
-3. 如果发现冲突，你可以：
-   - 手动从 shell 配置文件中删除（`~/.bashrc`、`~/.zshrc` 等）
-   - 或使用 unset 命令（会自动创建备份）：
+3. 如果发现冲突，手动删除它们：
+   - **macOS/Linux**：编辑 shell 配置文件（`~/.bashrc`、`~/.zshrc` 等）
      ```bash
-     cc-switch env unset ANTHROPIC_API_KEY --app claude
+     # 找到环境变量所在行并删除
+     nano ~/.zshrc
+     # 或使用你喜欢的编辑器：vim、code 等
      ```
+   - **Windows**：打开系统属性 → 环境变量，删除冲突的变量
 
 4. 重启终端使更改生效。
-
-</details>
-
-<details>
-<summary><b>如何恢复被删除的环境变量？</b></summary>
-
-<br>
-
-所有被删除的环境变量都会自动备份到 `~/.cc-switch/backups/`。
-
-查看备份：
-```bash
-ls ~/.cc-switch/backups/env-backup-*.json
-```
-
-备份以 JSON 格式存储，带有时间戳，方便必要时恢复。
 
 </details>
 
