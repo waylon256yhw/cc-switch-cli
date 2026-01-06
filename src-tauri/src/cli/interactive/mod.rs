@@ -13,14 +13,15 @@ use crate::cli::ui::{error, highlight, info, success};
 use crate::error::AppError;
 use crate::services::{McpService, PromptService, ProviderService};
 
-use utils::pause;
+use utils::{clear_screen, pause};
 
 pub fn run(app: Option<AppType>) -> Result<(), AppError> {
     let mut app_type = app.unwrap_or(AppType::Claude);
 
-    print_welcome(&app_type);
-
     loop {
+        clear_screen();
+        print_welcome(&app_type);
+
         match show_main_menu(&app_type)? {
             MainMenuChoice::ManageProviders => {
                 if let Err(e) = provider::manage_providers_menu(&app_type) {
@@ -55,7 +56,6 @@ pub fn run(app: Option<AppType>) -> Result<(), AppError> {
             MainMenuChoice::SwitchApp => {
                 if let Ok(new_app) = select_app() {
                     app_type = new_app;
-                    print_welcome(&app_type);
                 }
             }
             MainMenuChoice::Settings => {
@@ -65,7 +65,8 @@ pub fn run(app: Option<AppType>) -> Result<(), AppError> {
                 }
             }
             MainMenuChoice::Exit => {
-                println!("\n{}", success(texts::goodbye()));
+                clear_screen();
+                println!("{}\n", success(texts::goodbye()));
                 break;
             }
         }

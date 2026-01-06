@@ -7,10 +7,11 @@ use crate::error::AppError;
 use crate::services::PromptService;
 use crate::store::AppState;
 
-use super::utils::{get_state, pause};
+use super::utils::{clear_screen, get_state, pause};
 
 pub fn manage_prompts_menu(app_type: &AppType) -> Result<(), AppError> {
     loop {
+        clear_screen();
         println!("\n{}", highlight(texts::prompts_management()));
         println!("{}", "─".repeat(60));
 
@@ -83,6 +84,7 @@ fn view_current_prompt_interactive(
     _app_type: &AppType,
     prompts: &std::collections::HashMap<String, crate::prompt::Prompt>,
 ) -> Result<(), AppError> {
+    clear_screen();
     let active = prompts.iter().find(|(_, p)| p.enabled);
 
     if let Some((id, prompt)) = active {
@@ -111,6 +113,7 @@ fn view_current_prompt_interactive(
 fn show_prompt_content_interactive(
     prompts: &std::collections::HashMap<String, crate::prompt::Prompt>,
 ) -> Result<(), AppError> {
+    clear_screen();
     if prompts.is_empty() {
         println!("\n{}", info(texts::no_prompts_available()));
         pause();
@@ -151,6 +154,7 @@ fn delete_prompt_interactive(
     app_type: &AppType,
     prompts: &std::collections::HashMap<String, crate::prompt::Prompt>,
 ) -> Result<(), AppError> {
+    clear_screen();
     let deletable: Vec<_> = prompts
         .iter()
         .filter(|(_, p)| !p.enabled)
@@ -198,6 +202,7 @@ fn switch_prompt_interactive(
     app_type: &AppType,
     prompts: &std::collections::HashMap<String, crate::prompt::Prompt>,
 ) -> Result<(), AppError> {
+    clear_screen();
     if prompts.is_empty() {
         println!("\n{}", info(texts::no_prompts_available()));
         pause();

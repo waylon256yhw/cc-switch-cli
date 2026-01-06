@@ -6,13 +6,14 @@ use crate::cli::i18n::texts;
 use crate::cli::ui::{error, highlight, info, success};
 use crate::config::get_app_config_path;
 use crate::error::AppError;
-use crate::services::ProviderService;
 use crate::services::ConfigService;
+use crate::services::ProviderService;
 
-use super::utils::{get_state, pause};
+use super::utils::{clear_screen, get_state, pause};
 
 pub fn manage_config_menu(app_type: &AppType) -> Result<(), AppError> {
     loop {
+        clear_screen();
         println!("\n{}", highlight(texts::config_management()));
         println!("{}", "─".repeat(60));
 
@@ -67,6 +68,7 @@ pub fn manage_config_menu(app_type: &AppType) -> Result<(), AppError> {
 }
 
 fn edit_common_config_snippet_interactive(app_type: &AppType) -> Result<(), AppError> {
+    clear_screen();
     println!(
         "\n{}",
         highlight(
@@ -95,7 +97,11 @@ fn edit_common_config_snippet_interactive(app_type: &AppType) -> Result<(), AppE
     loop {
         println!(
             "\n{}",
-            info(&format!("{} ({})", texts::opening_external_editor(), field_name))
+            info(&format!(
+                "{} ({})",
+                texts::opening_external_editor(),
+                field_name
+            ))
         );
 
         let edited = match open_external_editor(&initial) {
@@ -119,7 +125,10 @@ fn edit_common_config_snippet_interactive(app_type: &AppType) -> Result<(), AppE
             let value: serde_json::Value = match serde_json::from_str(&edited) {
                 Ok(v) => v,
                 Err(e) => {
-                    println!("\n{}", error(&format!("{}: {}", texts::invalid_json_syntax(), e)));
+                    println!(
+                        "\n{}",
+                        error(&format!("{}: {}", texts::invalid_json_syntax(), e))
+                    );
                     if !retry_prompt()? {
                         return Ok(());
                     }
@@ -177,7 +186,10 @@ fn edit_common_config_snippet_interactive(app_type: &AppType) -> Result<(), AppE
     if apply {
         let current_id = ProviderService::current(&state, app_type.clone())?;
         if current_id.trim().is_empty() {
-            println!("{}", info(texts::common_config_snippet_no_current_provider()));
+            println!(
+                "{}",
+                info(texts::common_config_snippet_no_current_provider())
+            );
         } else {
             ProviderService::switch(&state, app_type.clone(), &current_id)?;
             println!("{}", success(texts::common_config_snippet_applied()));
@@ -203,6 +215,7 @@ fn open_external_editor(initial_content: &str) -> Result<String, AppError> {
 }
 
 fn show_config_path_interactive() -> Result<(), AppError> {
+    clear_screen();
     let config_path = get_app_config_path();
     let config_dir = config_path.parent().unwrap_or(&config_path);
 
@@ -235,6 +248,7 @@ fn show_config_path_interactive() -> Result<(), AppError> {
 }
 
 fn show_full_config_interactive() -> Result<(), AppError> {
+    clear_screen();
     let config = MultiAppConfig::load()?;
     let json = serde_json::to_string_pretty(&config)
         .map_err(|e| AppError::Message(format!("Failed to serialize config: {}", e)))?;
@@ -251,6 +265,7 @@ fn show_full_config_interactive() -> Result<(), AppError> {
 }
 
 fn export_config_interactive(path: &str) -> Result<(), AppError> {
+    clear_screen();
     let target_path = Path::new(path);
 
     if target_path.exists() {
@@ -274,6 +289,7 @@ fn export_config_interactive(path: &str) -> Result<(), AppError> {
 }
 
 fn import_config_interactive(path: &str) -> Result<(), AppError> {
+    clear_screen();
     let file_path = Path::new(path);
 
     if !file_path.exists() {
@@ -301,6 +317,7 @@ fn import_config_interactive(path: &str) -> Result<(), AppError> {
 }
 
 fn backup_config_interactive() -> Result<(), AppError> {
+    clear_screen();
     println!(
         "\n{}",
         highlight(texts::config_backup().trim_start_matches("💾 "))
@@ -342,6 +359,7 @@ fn backup_config_interactive() -> Result<(), AppError> {
 }
 
 fn restore_config_interactive() -> Result<(), AppError> {
+    clear_screen();
     println!(
         "\n{}",
         highlight(texts::config_restore().trim_start_matches("♻️  "))
@@ -415,6 +433,7 @@ fn restore_config_interactive() -> Result<(), AppError> {
 }
 
 fn validate_config_interactive() -> Result<(), AppError> {
+    clear_screen();
     let config_path = get_app_config_path();
 
     println!(
@@ -466,6 +485,7 @@ fn validate_config_interactive() -> Result<(), AppError> {
 }
 
 fn reset_config_interactive() -> Result<(), AppError> {
+    clear_screen();
     let confirm = Confirm::new(texts::confirm_reset())
         .with_default(false)
         .prompt()

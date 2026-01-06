@@ -7,10 +7,11 @@ use crate::error::AppError;
 use crate::services::{ProviderService, SpeedtestService};
 use crate::store::AppState;
 
-use super::utils::{get_state, pause};
+use super::utils::{clear_screen, get_state, pause};
 
 pub fn manage_providers_menu(app_type: &AppType) -> Result<(), AppError> {
     loop {
+        clear_screen();
         println!("\n{}", highlight(texts::provider_management()));
         println!("{}", "─".repeat(60));
 
@@ -86,6 +87,7 @@ fn view_provider_detail(
     current_id: &str,
 ) -> Result<(), AppError> {
     loop {
+        clear_screen();
         let providers = ProviderService::list(state, app_type.clone())?;
         if let Some(provider) = providers.get(current_id) {
             println!("\n{}", highlight(texts::current_provider_details()));
@@ -94,8 +96,16 @@ fn view_provider_detail(
             // 基本信息
             println!("\n{}", highlight(texts::basic_info_section_header()));
             println!("  ID:       {}", current_id);
-            println!("  {}:     {}", texts::name_label_with_colon(), provider.name);
-            println!("  {}:     {}", texts::app_label_with_colon(), app_type.as_str());
+            println!(
+                "  {}:     {}",
+                texts::name_label_with_colon(),
+                provider.name
+            );
+            println!(
+                "  {}:     {}",
+                texts::app_label_with_colon(),
+                app_type.as_str()
+            );
 
             // 仅 Claude 应用显示详细配置
             if matches!(app_type, AppType::Claude) {
@@ -166,6 +176,7 @@ fn speedtest_provider_interactive(
     _provider_id: &str,
     provider: &crate::provider::Provider,
 ) -> Result<(), AppError> {
+    clear_screen();
     // Extract API URL
     let api_url = extract_api_url(&provider.settings_config, app_type);
 
@@ -177,7 +188,10 @@ fn speedtest_provider_interactive(
 
     let api_url = api_url.unwrap();
 
-    println!("\n{}", info(&format!("Testing provider '{}'...", provider.name)));
+    println!(
+        "\n{}",
+        info(&format!("Testing provider '{}'...", provider.name))
+    );
     println!("{}", info(&format!("Endpoint: {}", api_url)));
     println!();
 
@@ -185,9 +199,8 @@ fn speedtest_provider_interactive(
     let runtime = tokio::runtime::Runtime::new()
         .map_err(|e| AppError::Message(format!("Failed to create async runtime: {}", e)))?;
 
-    let results = runtime.block_on(async {
-        SpeedtestService::test_endpoints(vec![api_url.clone()], None).await
-    })?;
+    let results = runtime
+        .block_on(async { SpeedtestService::test_endpoints(vec![api_url.clone()], None).await })?;
 
     // Display results
     if let Some(result) = results.first() {
@@ -202,15 +215,12 @@ fn speedtest_provider_interactive(
             "Timeout".to_string()
         };
 
-        let status_str = result.status
+        let status_str = result
+            .status
             .map(|s| s.to_string())
             .unwrap_or_else(|| "N/A".to_string());
 
-        table.add_row(vec![
-            result.url.clone(),
-            latency_str,
-            status_str,
-        ]);
+        table.add_row(vec![result.url.clone(), latency_str, status_str]);
 
         println!("{}", table);
 
@@ -422,8 +432,8 @@ fn edit_provider_interactive(
 
     // 从 "Name (id)" 格式中提取 ID
     let selected_id = selection
-        .rsplit_once('(')  // 从右边分割，找到最后一个 '('
-        .and_then(|(_, id_part)| id_part.strip_suffix(')'))  // 移除末尾的 ')'
+        .rsplit_once('(') // 从右边分割，找到最后一个 '('
+        .and_then(|(_, id_part)| id_part.strip_suffix(')')) // 移除末尾的 ')'
         .ok_or_else(|| AppError::Message(texts::invalid_selection_format().to_string()))?
         .to_string();
 
@@ -442,9 +452,7 @@ fn edit_provider_interactive(
         EditMode::Interactive => {
             // 调用命令层的交互式编辑实现
             crate::cli::commands::provider::execute(
-                crate::cli::commands::provider::ProviderCommand::Edit {
-                    id: selected_id,
-                },
+                crate::cli::commands::provider::ProviderCommand::Edit { id: selected_id },
                 Some(app_type.clone()),
             )?;
         }
@@ -493,9 +501,9 @@ fn edit_provider_with_json_editor(
             match file_choice {
                 CodexConfigFile::Auth => {
                     // Edit auth.json (JSON format)
-                    let auth_value = original.settings_config
-                        .get("auth")
-                        .ok_or_else(|| AppError::Message("Missing 'auth' field in settings_config".to_string()))?;
+                    let auth_value = original.settings_config.get("auth").ok_or_else(|| {
+                        AppError::Message("Missing 'auth' field in settings_config".to_string())
+                    })?;
 
                     let json_str = serde_json::to_string_pretty(auth_value)
                         .map_err(|e| AppError::JsonSerialize { source: e })?;
@@ -504,10 +512,15 @@ fn edit_provider_with_json_editor(
                 }
                 CodexConfigFile::Config => {
                     // Edit config.toml (TOML format)
-                    let config_str = original.settings_config
+                    let config_str = original
+                        .settings_config
                         .get("config")
                         .and_then(|v| v.as_str())
-                        .ok_or_else(|| AppError::Message("Missing or invalid 'config' field in settings_config".to_string()))?;
+                        .ok_or_else(|| {
+                            AppError::Message(
+                                "Missing or invalid 'config' field in settings_config".to_string(),
+                            )
+                        })?;
 
                     ("settings_config.config", config_str.to_string(), true)
                 }
@@ -525,7 +538,14 @@ fn edit_provider_with_json_editor(
     // 2. Edit loop with validation
     loop {
         // Open external editor
-        println!("\n{}", info(&format!("{} ({})", texts::opening_external_editor(), field_name)));
+        println!(
+            "\n{}",
+            info(&format!(
+                "{} ({})",
+                texts::opening_external_editor(),
+                field_name
+            ))
+        );
         let edited_content = match open_external_editor(&content_to_edit) {
             Ok(content) => content,
             Err(e) => {
@@ -562,7 +582,10 @@ fn edit_provider_with_json_editor(
             match serde_json::from_str::<serde_json::Value>(&edited_content) {
                 Ok(v) => v,
                 Err(e) => {
-                    println!("\n{}", error(&format!("{}: {}", texts::invalid_json_syntax(), e)));
+                    println!(
+                        "\n{}",
+                        error(&format!("{}: {}", texts::invalid_json_syntax(), e))
+                    );
 
                     if !retry_prompt()? {
                         return Ok(());
@@ -651,7 +674,11 @@ fn open_external_editor(initial_content: &str) -> Result<String, AppError> {
 /// Display provider summary (used by JSON editor)
 fn display_provider_summary(provider: &crate::provider::Provider, app_type: &AppType) {
     println!("  {}:       {}", texts::id_label_colon(), provider.id);
-    println!("  {}:     {}", texts::name_label_with_colon(), provider.name);
+    println!(
+        "  {}:     {}",
+        texts::name_label_with_colon(),
+        provider.name
+    );
 
     if let Some(url) = &provider.website_url {
         println!("  {}:      {}", texts::url_label_colon(), url);

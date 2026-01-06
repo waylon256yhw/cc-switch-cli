@@ -4,10 +4,11 @@ use crate::cli::i18n::{current_language, set_language, texts, Language};
 use crate::cli::ui::{highlight, success};
 use crate::error::AppError;
 
-use super::utils::pause;
+use super::utils::{clear_screen, pause};
 
 pub fn settings_menu() -> Result<(), AppError> {
     loop {
+        clear_screen();
         println!("\n{}", highlight(texts::settings_title()));
         println!("{}", "─".repeat(60));
 
@@ -36,6 +37,7 @@ pub fn settings_menu() -> Result<(), AppError> {
 }
 
 fn change_language_interactive() -> Result<(), AppError> {
+    clear_screen();
     let languages = vec![Language::English, Language::Chinese];
 
     let selected = Select::new(texts::select_language(), languages)

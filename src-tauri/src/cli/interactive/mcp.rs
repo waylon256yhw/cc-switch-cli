@@ -8,10 +8,11 @@ use crate::error::AppError;
 use crate::services::McpService;
 use crate::store::AppState;
 
-use super::utils::{get_state, pause};
+use super::utils::{clear_screen, get_state, pause};
 
 pub fn manage_mcp_menu(_app_type: &AppType) -> Result<(), AppError> {
     loop {
+        clear_screen();
         println!("\n{}", highlight(texts::mcp_management()));
         println!("{}", "─".repeat(60));
 
@@ -77,6 +78,7 @@ pub fn manage_mcp_menu(_app_type: &AppType) -> Result<(), AppError> {
 }
 
 fn mcp_enable_server_interactive(state: &AppState) -> Result<(), AppError> {
+    clear_screen();
     let servers = McpService::get_all_servers(state)?;
     if servers.is_empty() {
         println!("\n{}", info(texts::no_mcp_servers()));
@@ -124,6 +126,7 @@ fn mcp_enable_server_interactive(state: &AppState) -> Result<(), AppError> {
 }
 
 fn mcp_disable_server_interactive(state: &AppState) -> Result<(), AppError> {
+    clear_screen();
     let servers = McpService::get_all_servers(state)?;
     if servers.is_empty() {
         println!("\n{}", info(texts::no_mcp_servers()));
@@ -171,6 +174,7 @@ fn mcp_disable_server_interactive(state: &AppState) -> Result<(), AppError> {
 }
 
 fn mcp_delete_server_interactive(state: &AppState) -> Result<(), AppError> {
+    clear_screen();
     let servers = McpService::get_all_servers(state)?;
     if servers.is_empty() {
         println!("\n{}", info(texts::no_servers_to_delete()));
@@ -211,6 +215,7 @@ fn mcp_delete_server_interactive(state: &AppState) -> Result<(), AppError> {
 }
 
 fn mcp_import_servers_interactive(state: &AppState) -> Result<(), AppError> {
+    clear_screen();
     let mut total = 0;
     total += McpService::import_from_claude(state)?;
     total += McpService::import_from_codex(state)?;
@@ -222,6 +227,7 @@ fn mcp_import_servers_interactive(state: &AppState) -> Result<(), AppError> {
 }
 
 fn mcp_validate_command_interactive() -> Result<(), AppError> {
+    clear_screen();
     let command = Text::new(texts::enter_command_to_validate())
         .prompt()
         .map_err(|e| AppError::Message(format!("Input failed: {}", e)))?;

@@ -1,5 +1,5 @@
+use std::io::{self, IsTerminal, Write};
 use std::sync::RwLock;
-use std::io::{self, Write};
 
 use crate::app_config::MultiAppConfig;
 use crate::cli::i18n::texts;
@@ -11,6 +11,16 @@ pub fn get_state() -> Result<AppState, AppError> {
     Ok(AppState {
         config: RwLock::new(config),
     })
+}
+
+pub fn clear_screen() {
+    if !io::stdout().is_terminal() {
+        return;
+    }
+
+    let term = console::Term::stdout();
+    let _ = term.clear_screen();
+    let _ = io::stdout().flush();
 }
 
 pub fn pause() {
