@@ -41,7 +41,7 @@ pub fn run(app: Option<AppType>) -> Result<(), AppError> {
                 }
             }
             MainMenuChoice::ManageConfig => {
-                if let Err(e) = config::manage_config_menu() {
+                if let Err(e) = config::manage_config_menu(&app_type) {
                     println!("\n{}", error(&format!("{}: {}", texts::error_prefix(), e)));
                     pause();
                 }

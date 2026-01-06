@@ -1964,6 +1964,14 @@ pub mod texts {
         }
     }
 
+    pub fn config_common_snippet() -> &'static str {
+        if is_chinese() {
+            "🧩 通用配置片段"
+        } else {
+            "🧩 Common Config Snippet"
+        }
+    }
+
     pub fn config_reset() -> &'static str {
         if is_chinese() {
             "🔄 重置配置"
@@ -2025,6 +2033,70 @@ pub mod texts {
             "确定要重置配置吗？这将删除所有自定义设置。"
         } else {
             "Are you sure you want to reset? This will delete all custom settings."
+        }
+    }
+
+    pub fn common_config_snippet_editor_prompt(app: &str) -> String {
+        if is_chinese() {
+            format!("编辑 {app} 的通用配置片段（JSON 对象，留空则清除）：")
+        } else {
+            format!("Edit common config snippet for {app} (JSON object; empty to clear):")
+        }
+    }
+
+    pub fn common_config_snippet_invalid_json(err: &str) -> String {
+        if is_chinese() {
+            format!("JSON 无效：{err}")
+        } else {
+            format!("Invalid JSON: {err}")
+        }
+    }
+
+    pub fn common_config_snippet_not_object() -> &'static str {
+        if is_chinese() {
+            "通用配置必须是 JSON 对象（例如：{\"env\":{...}}）"
+        } else {
+            "Common config must be a JSON object (e.g. {\"env\":{...}})"
+        }
+    }
+
+    pub fn common_config_snippet_saved() -> &'static str {
+        if is_chinese() { "✓ 已保存通用配置片段" } else { "✓ Common config snippet saved" }
+    }
+
+    pub fn common_config_snippet_cleared() -> &'static str {
+        if is_chinese() { "✓ 已清除通用配置片段" } else { "✓ Common config snippet cleared" }
+    }
+
+    pub fn common_config_snippet_apply_now() -> &'static str {
+        if is_chinese() {
+            "现在应用到当前供应商（写入 live 配置）？"
+        } else {
+            "Apply to current provider now (write live config)?"
+        }
+    }
+
+    pub fn common_config_snippet_no_current_provider() -> &'static str {
+        if is_chinese() {
+            "当前未选择供应商，已保存通用配置片段。"
+        } else {
+            "No current provider selected; common config snippet saved."
+        }
+    }
+
+    pub fn common_config_snippet_applied() -> &'static str {
+        if is_chinese() {
+            "✓ 已应用到 live 配置（请重启对应客户端）"
+        } else {
+            "✓ Applied to live config (restart the client)"
+        }
+    }
+
+    pub fn common_config_snippet_apply_hint() -> &'static str {
+        if is_chinese() {
+            "提示：切换一次供应商即可重新写入 live 配置。"
+        } else {
+            "Tip: switch provider once to re-write the live config."
         }
     }
 

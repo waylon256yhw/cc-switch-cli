@@ -1,16 +1,17 @@
-use inquire::{Confirm, Select, Text};
+use inquire::{Confirm, Editor, Select, Text};
 use std::path::Path;
 
-use crate::app_config::MultiAppConfig;
+use crate::app_config::{AppType, MultiAppConfig};
 use crate::cli::i18n::texts;
 use crate::cli::ui::{highlight, info, success};
 use crate::config::get_app_config_path;
 use crate::error::AppError;
+use crate::services::ProviderService;
 use crate::services::ConfigService;
 
 use super::utils::{get_state, pause};
 
-pub fn manage_config_menu() -> Result<(), AppError> {
+pub fn manage_config_menu(app_type: &AppType) -> Result<(), AppError> {
     loop {
         println!("\n{}", highlight(texts::config_management()));
         println!("{}", "─".repeat(60));
@@ -23,6 +24,7 @@ pub fn manage_config_menu() -> Result<(), AppError> {
             texts::config_backup(),
             texts::config_restore(),
             texts::config_validate(),
+            texts::config_common_snippet(),
             texts::config_reset(),
             texts::back_to_main(),
         ];
@@ -52,6 +54,8 @@ pub fn manage_config_menu() -> Result<(), AppError> {
             restore_config_interactive()?;
         } else if choice == texts::config_validate() {
             validate_config_interactive()?;
+        } else if choice == texts::config_common_snippet() {
+            edit_common_config_snippet_interactive(app_type)?;
         } else if choice == texts::config_reset() {
             reset_config_interactive()?;
         } else {
@@ -59,6 +63,82 @@ pub fn manage_config_menu() -> Result<(), AppError> {
         }
     }
 
+    Ok(())
+}
+
+fn edit_common_config_snippet_interactive(app_type: &AppType) -> Result<(), AppError> {
+    println!(
+        "\n{}",
+        highlight(
+            texts::config_common_snippet()
+                .trim_start_matches("🧩 ")
+                .trim()
+        )
+    );
+    println!("{}", "─".repeat(60));
+
+    let state = get_state()?;
+    let current = {
+        let cfg = state.config.read()?;
+        cfg.common_config_snippets.get(app_type).cloned()
+    }
+    .unwrap_or_default();
+
+    let initial = if current.trim().is_empty() {
+        "{}\n".to_string()
+    } else {
+        current
+    };
+
+    let prompt = texts::common_config_snippet_editor_prompt(app_type.as_str());
+    let edited = Editor::new(&prompt)
+        .with_predefined_text(&initial)
+        .prompt()
+        .map_err(|e| AppError::Message(format!("Editor failed: {}", e)))?;
+
+    let edited = edited.trim().to_string();
+    let (next_snippet, action_label) = if edited.is_empty() {
+        (None, texts::common_config_snippet_cleared())
+    } else {
+        let value: serde_json::Value = serde_json::from_str(&edited).map_err(|e| {
+            AppError::Message(texts::common_config_snippet_invalid_json(&e.to_string()))
+        })?;
+        if !value.is_object() {
+            return Err(AppError::Message(
+                texts::common_config_snippet_not_object().to_string(),
+            ));
+        }
+        let pretty = serde_json::to_string_pretty(&value)
+            .map_err(|e| AppError::Message(format!("Failed to serialize JSON: {}", e)))?;
+        (Some(pretty), texts::common_config_snippet_saved())
+    };
+
+    {
+        let mut cfg = state.config.write()?;
+        cfg.common_config_snippets.set(app_type, next_snippet);
+    }
+    state.save()?;
+
+    println!("\n{}", success(action_label));
+
+    let apply = Confirm::new(texts::common_config_snippet_apply_now())
+        .with_default(true)
+        .prompt()
+        .map_err(|_| AppError::Message("Confirmation failed".to_string()))?;
+
+    if apply {
+        let current_id = ProviderService::current(&state, app_type.clone())?;
+        if current_id.trim().is_empty() {
+            println!("{}", info(texts::common_config_snippet_no_current_provider()));
+        } else {
+            ProviderService::switch(&state, app_type.clone(), &current_id)?;
+            println!("{}", success(texts::common_config_snippet_applied()));
+        }
+    } else {
+        println!("{}", info(texts::common_config_snippet_apply_hint()));
+    }
+
+    pause();
     Ok(())
 }
 
