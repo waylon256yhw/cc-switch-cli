@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.2.0] - 2026-01-06
+
+### Added
+
+- **Common Config Snippet**: Add `cc-switch config common` to manage per-app common config snippets (useful for shared Claude settings like `env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` and `includeCoAuthoredBy`). Fixes #11.
+
+### Changed
+
+- **Claude**: Merge the common config snippet into the live `~/.claude/settings.json` when switching providers.
+- **Claude**: Strip values matching the common snippet when backfilling provider snapshots, so common settings stay global across providers.
+
 ## [4.1.4] - 2026-01-06
 
 ### Fixed
