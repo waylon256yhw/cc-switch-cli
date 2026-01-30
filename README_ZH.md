@@ -286,6 +286,7 @@ copy target\release\cc-switch.exe C:\Windows\System32\
 ### 核心设计
 
 - **SSOT**：所有配置存于 `~/.cc-switch/config.json`，实时配置是生成的产物
+- **安全 Live 同步（默认）**：若目标应用尚未初始化，将跳过写入 live 文件（避免意外创建 `~/.claude`、`~/.codex`、`~/.gemini`）
 - **原子写入**：临时文件 + 重命名模式防止损坏
 - **服务层复用**：100% 复用原 GUI 版本
 - **并发安全**：RwLock 配合作用域守卫
@@ -310,6 +311,8 @@ copy target\release\cc-switch.exe C:\Windows\System32\
 <summary><b>为什么切换供应商后配置没有生效？</b></summary>
 
 <br>
+
+首先确认目标 CLI 已经至少运行过一次（即对应配置目录已存在）。如果应用未初始化，CC-Switch 会出于安全原因跳过写入 live 文件，并提示一条 warning。请先运行一次目标 CLI（例如 `claude --help` / `codex --help` / `gemini --help`），然后再切换一次供应商。
 
 这通常是由**环境变量冲突**引起的。如果你在系统环境变量中设置了 API 密钥（如 `ANTHROPIC_API_KEY`、`OPENAI_API_KEY`），它们会覆盖 CC-Switch 的配置。
 

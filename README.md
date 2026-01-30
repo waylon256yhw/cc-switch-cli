@@ -286,6 +286,7 @@ copy target\release\cc-switch.exe C:\Windows\System32\
 ### Core Design
 
 - **SSOT**: All config in `~/.cc-switch/config.json`, live configs are generated artifacts
+- **Safe Live Sync (Default)**: Skip writing live files for apps that haven't been initialized yet (prevents creating `~/.claude`, `~/.codex`, `~/.gemini` unexpectedly)
 - **Atomic Writes**: Temp file + rename pattern prevents corruption
 - **Service Layer Reuse**: 100% reused from original GUI version
 - **Concurrency Safe**: RwLock with scoped guards
@@ -310,6 +311,8 @@ copy target\release\cc-switch.exe C:\Windows\System32\
 <summary><b>Why doesn't my configuration take effect after switching providers?</b></summary>
 
 <br>
+
+First, make sure the target CLI has been initialized at least once (i.e. its config directory exists). CC-Switch may skip live sync for uninitialized apps; you will see a warning. Run the target CLI once (e.g. `claude --help`, `codex --help`, `gemini --help`), then switch again.
 
 This is usually caused by **environment variable conflicts**. If you have API keys set in system environment variables (like `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`), they will override CC-Switch's configuration.
 
