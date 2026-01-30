@@ -369,7 +369,7 @@ impl ConfigService {
         use crate::gemini_config::{env_to_json, read_gemini_env};
 
         let common_config_snippet = config.common_config_snippets.gemini.as_deref();
-        ProviderService::write_gemini_live(provider, common_config_snippet)?;
+        ProviderService::write_gemini_live_force(provider, common_config_snippet)?;
 
         // 读回实际写入的内容并更新到配置中（包含 settings.json）
         let live_after_env = read_gemini_env()?;

@@ -366,6 +366,50 @@ fn set_mcp_enabled_for_codex_writes_live_config() {
 }
 
 #[test]
+fn upsert_server_skips_live_sync_when_gemini_uninitialized() {
+    let _guard = test_mutex().lock().expect("acquire test mutex");
+    reset_test_fs();
+    let home = ensure_test_home();
+
+    assert!(
+        !home.join(".gemini").exists(),
+        "precondition: ~/.gemini should not exist"
+    );
+
+    let mut config = MultiAppConfig::default();
+    config.mcp.servers = Some(HashMap::new());
+
+    let state = AppState {
+        config: RwLock::new(config),
+    };
+
+    let server = McpServer {
+        id: "gemini-server".to_string(),
+        name: "Gemini Server".to_string(),
+        server: json!({
+            "type": "http",
+            "url": "http://localhost:1234"
+        }),
+        apps: McpApps {
+            claude: false,
+            codex: false,
+            gemini: true,
+        },
+        description: None,
+        homepage: None,
+        docs: None,
+        tags: Vec::new(),
+    };
+
+    McpService::upsert_server(&state, server).expect("upsert server should succeed");
+
+    assert!(
+        !home.join(".gemini").exists(),
+        "should_sync=auto: upsert should not create ~/.gemini when uninitialized"
+    );
+}
+
+#[test]
 fn upsert_server_disables_app_removes_from_gemini_live() {
     let _guard = test_mutex().lock().expect("acquire test mutex");
     reset_test_fs();

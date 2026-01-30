@@ -99,6 +99,8 @@ mod tests {
     fn switch_codex_succeeds_without_auth_json() {
         let temp_home = TempDir::new().expect("create temp home");
         let _env = EnvGuard::set_home(temp_home.path());
+        std::fs::create_dir_all(crate::codex_config::get_codex_config_dir())
+            .expect("create ~/.codex (initialized)");
 
         let mut config = MultiAppConfig::default();
         config.ensure_app(&AppType::Codex);
@@ -175,6 +177,8 @@ mod tests {
     fn codex_switch_preserves_base_url_and_wire_api_across_multiple_switches() {
         let temp_home = TempDir::new().expect("create temp home");
         let _env = EnvGuard::set_home(temp_home.path());
+        std::fs::create_dir_all(crate::codex_config::get_codex_config_dir())
+            .expect("create ~/.codex (initialized)");
 
         let mut config = MultiAppConfig::default();
         config.ensure_app(&AppType::Codex);
@@ -351,6 +355,8 @@ mod tests {
     fn common_config_snippet_is_merged_into_claude_settings_on_write() {
         let temp_home = TempDir::new().expect("create temp home");
         let _env = EnvGuard::set_home(temp_home.path());
+        std::fs::create_dir_all(crate::config::get_claude_config_dir())
+            .expect("create ~/.claude (initialized)");
 
         let mut config = MultiAppConfig::default();
         config.ensure_app(&AppType::Claude);
@@ -482,6 +488,8 @@ mod tests {
     fn common_config_snippet_is_merged_into_codex_config_on_write() {
         let temp_home = TempDir::new().expect("create temp home");
         let _env = EnvGuard::set_home(temp_home.path());
+        std::fs::create_dir_all(crate::codex_config::get_codex_config_dir())
+            .expect("create ~/.codex (initialized)");
 
         let mut config = MultiAppConfig::default();
         config.ensure_app(&AppType::Codex);
@@ -699,6 +707,8 @@ base_url = "http://localhost:8080"
     fn common_config_snippet_is_merged_into_gemini_env_on_write() {
         let temp_home = TempDir::new().expect("create temp home");
         let _env = EnvGuard::set_home(temp_home.path());
+        std::fs::create_dir_all(crate::gemini_config::get_gemini_dir())
+            .expect("create ~/.gemini (initialized)");
 
         let mut config = MultiAppConfig::default();
         config.ensure_app(&AppType::Gemini);
@@ -1114,7 +1124,7 @@ impl ProviderService {
             use crate::services::mcp::McpService;
             McpService::sync_all_enabled(state)?;
         }
-        if action.refresh_snapshot {
+        if action.refresh_snapshot && crate::sync_policy::should_sync_live(&action.app_type) {
             Self::refresh_provider_snapshot(state, &action.app_type, &action.provider.id)?;
         }
         Ok(())
@@ -1808,6 +1818,10 @@ impl ProviderService {
     ) -> Result<(), AppError> {
         use toml_edit::{value, Item, Table};
 
+        if !crate::sync_policy::should_sync_live(&AppType::Codex) {
+            return Ok(());
+        }
+
         let settings = provider
             .settings_config
             .as_object()
@@ -2107,6 +2121,10 @@ impl ProviderService {
         provider: &Provider,
         common_config_snippet: Option<&str>,
     ) -> Result<(), AppError> {
+        if !crate::sync_policy::should_sync_live(&AppType::Claude) {
+            return Ok(());
+        }
+
         let settings_path = get_claude_settings_path();
         let mut provider_content = provider.settings_config.clone();
         let _ = Self::normalize_claude_models_in_value(&mut provider_content);
@@ -2134,6 +2152,21 @@ impl ProviderService {
         provider: &Provider,
         common_config_snippet: Option<&str>,
     ) -> Result<(), AppError> {
+        Self::write_gemini_live_impl(provider, common_config_snippet, false)
+    }
+
+    pub(crate) fn write_gemini_live_force(
+        provider: &Provider,
+        common_config_snippet: Option<&str>,
+    ) -> Result<(), AppError> {
+        Self::write_gemini_live_impl(provider, common_config_snippet, true)
+    }
+
+    fn write_gemini_live_impl(
+        provider: &Provider,
+        common_config_snippet: Option<&str>,
+        force_sync: bool,
+    ) -> Result<(), AppError> {
         use crate::gemini_config::{
             get_gemini_settings_path, json_to_env, validate_gemini_settings_strict,
             write_gemini_env_atomic,
@@ -2141,6 +2174,17 @@ impl ProviderService {
 
         // 一次性检测认证类型，避免重复检测
         let auth_type = Self::detect_gemini_auth_type(provider);
+
+        if !force_sync && !crate::sync_policy::should_sync_live(&AppType::Gemini) {
+            // still update CC-Switch app-level settings, but do not create any ~/.gemini files
+            match auth_type {
+                GeminiAuthType::GoogleOfficial => {
+                    Self::ensure_google_oauth_security_flag(provider)?
+                }
+                GeminiAuthType::ApiKey => Self::ensure_api_key_security_flag(provider)?,
+            }
+            return Ok(());
+        }
 
         let provider_content = provider.settings_config.clone();
         let content_to_write = if let Some(snippet) = common_config_snippet {
@@ -2439,6 +2483,8 @@ mod codex_openai_auth_tests {
     fn switch_codex_provider_uses_openai_auth_instead_of_env_key() {
         let temp_home = TempDir::new().expect("create temp home");
         let _env = EnvGuard::set_home(temp_home.path());
+        std::fs::create_dir_all(crate::codex_config::get_codex_config_dir())
+            .expect("create ~/.codex (initialized)");
 
         let mut config = MultiAppConfig::default();
         config.ensure_app(&AppType::Codex);

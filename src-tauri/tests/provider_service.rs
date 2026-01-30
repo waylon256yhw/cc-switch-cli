@@ -156,6 +156,74 @@ command = "say"
 }
 
 #[test]
+fn switch_gemini_when_uninitialized_skips_live_sync_and_succeeds() {
+    let _guard = test_mutex().lock().expect("acquire test mutex");
+    reset_test_fs();
+    let home = ensure_test_home();
+
+    assert!(
+        !home.join(".gemini").exists(),
+        "precondition: ~/.gemini should not exist"
+    );
+
+    let mut config = MultiAppConfig::default();
+    {
+        let manager = config
+            .get_manager_mut(&AppType::Gemini)
+            .expect("gemini manager");
+        manager.current = "old-provider".to_string();
+        manager.providers.insert(
+            "old-provider".to_string(),
+            Provider::with_id(
+                "old-provider".to_string(),
+                "Old Gemini".to_string(),
+                json!({
+                    "env": {
+                        "GEMINI_API_KEY": "old-key",
+                        "GOOGLE_GEMINI_BASE_URL": "https://example.com"
+                    },
+                    "config": {}
+                }),
+                Some("https://ai.google.dev".to_string()),
+            ),
+        );
+        manager.providers.insert(
+            "new-provider".to_string(),
+            Provider::with_id(
+                "new-provider".to_string(),
+                "New Gemini".to_string(),
+                json!({
+                    "env": {
+                        "GEMINI_API_KEY": "new-key",
+                        "GOOGLE_GEMINI_BASE_URL": "https://example.com"
+                    },
+                    "config": {}
+                }),
+                Some("https://ai.google.dev".to_string()),
+            ),
+        );
+    }
+
+    let state = AppState {
+        config: RwLock::new(config),
+    };
+
+    ProviderService::switch(&state, AppType::Gemini, "new-provider")
+        .expect("switch should succeed even when Gemini is uninitialized");
+
+    assert!(
+        !home.join(".gemini").exists(),
+        "should_sync=auto: switching provider should not create ~/.gemini when uninitialized"
+    );
+
+    let guard = state.config.read().expect("read config after switch");
+    let manager = guard
+        .get_manager(&AppType::Gemini)
+        .expect("gemini manager after switch");
+    assert_eq!(manager.current, "new-provider", "current provider updated");
+}
+
+#[test]
 fn switch_packycode_gemini_updates_security_selected_type() {
     let _guard = test_mutex().lock().expect("acquire test mutex");
     reset_test_fs();
@@ -270,6 +338,7 @@ fn switch_google_official_gemini_sets_oauth_security() {
     let _guard = test_mutex().lock().expect("acquire test mutex");
     reset_test_fs();
     let home = ensure_test_home();
+    std::fs::create_dir_all(home.join(".gemini")).expect("create gemini dir (initialized)");
 
     let mut config = MultiAppConfig::default();
     {
@@ -534,6 +603,9 @@ fn provider_service_switch_codex_missing_auth_is_allowed() {
     let _guard = test_mutex().lock().expect("acquire test mutex");
     reset_test_fs();
     let _home = ensure_test_home();
+    if let Some(parent) = cc_switch_lib::get_codex_config_path().parent() {
+        std::fs::create_dir_all(parent).expect("create codex dir (initialized)");
+    }
 
     let mut config = MultiAppConfig::default();
     {

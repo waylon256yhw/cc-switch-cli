@@ -200,6 +200,7 @@ fn show_current(app_type: AppType) -> Result<(), AppError> {
 fn switch_provider(app_type: AppType, id: &str) -> Result<(), AppError> {
     let state = get_state()?;
     let app_str = app_type.as_str().to_string();
+    let skip_live_sync = !crate::sync_policy::should_sync_live(&app_type);
 
     // 检查 provider 是否存在
     let providers = ProviderService::list(&state, app_type.clone())?;
@@ -212,6 +213,12 @@ fn switch_provider(app_type: AppType, id: &str) -> Result<(), AppError> {
 
     println!("{}", success(&format!("✓ Switched to provider '{}'", id)));
     println!("{}", info(&format!("  Application: {}", app_str)));
+    if skip_live_sync {
+        println!(
+            "{}",
+            warning(&texts::live_sync_skipped_uninitialized_warning(&app_str))
+        );
+    }
     println!(
         "\n{}",
         info("Note: Restart your CLI client to apply the changes.")

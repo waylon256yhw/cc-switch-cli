@@ -301,6 +301,9 @@ fn switch_provider_codex_allows_missing_auth_and_writes_config() {
     let _guard = test_mutex().lock().expect("acquire test mutex");
     reset_test_fs();
     let _home = ensure_test_home();
+    if let Some(parent) = get_codex_config_path().parent() {
+        std::fs::create_dir_all(parent).expect("create codex dir (initialized)");
+    }
 
     let mut config = MultiAppConfig::default();
     {

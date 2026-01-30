@@ -496,6 +496,14 @@ pub mod texts {
         }
     }
 
+    pub fn live_sync_skipped_uninitialized_warning(app: &str) -> String {
+        if is_chinese() {
+            format!("⚠ 未检测到 {app} 客户端本地配置，已跳过写入 live 文件；先运行一次 {app} 初始化后再试。")
+        } else {
+            format!("⚠ Live sync skipped: {app} client not initialized; run it once to initialize, then retry.")
+        }
+    }
+
     pub fn no_deletable_providers() -> &'static str {
         if is_chinese() {
             "没有可删除的供应商（无法删除当前供应商）。"

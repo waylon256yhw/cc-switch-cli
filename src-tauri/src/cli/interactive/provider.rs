@@ -2,7 +2,7 @@ use indexmap::IndexMap;
 
 use crate::app_config::AppType;
 use crate::cli::i18n::texts;
-use crate::cli::ui::{create_table, error, highlight, info, success};
+use crate::cli::ui::{create_table, error, highlight, info, success, warning};
 use crate::error::AppError;
 use crate::services::{ProviderService, SpeedtestService};
 use crate::store::AppState;
@@ -301,9 +301,18 @@ fn switch_provider_interactive(
         .and_then(|s| s.strip_suffix(')'))
         .ok_or_else(|| AppError::Message("Invalid choice".to_string()))?;
 
+    let skip_live_sync = !crate::sync_policy::should_sync_live(app_type);
     ProviderService::switch(state, app_type.clone(), id)?;
 
     println!("\n{}", success(&texts::switched_to_provider(id)));
+    if skip_live_sync {
+        println!(
+            "{}",
+            warning(&texts::live_sync_skipped_uninitialized_warning(
+                app_type.as_str()
+            ))
+        );
+    }
     println!("{}", info(texts::restart_note()));
     pause();
 

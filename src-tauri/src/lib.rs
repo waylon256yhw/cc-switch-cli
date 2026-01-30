@@ -18,6 +18,7 @@ mod provider_defaults;
 mod services;
 mod settings;
 mod store;
+mod sync_policy;
 mod usage_script;
 
 // CLI module

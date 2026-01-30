@@ -1,3 +1,4 @@
+use crate::app_config::AppType;
 use crate::error::AppError;
 use crate::provider::Provider;
 use crate::settings;
@@ -99,8 +100,10 @@ impl ProviderService {
         settings::ensure_security_auth_selected_type(Self::GOOGLE_OAUTH_SECURITY_SELECTED_TYPE)?;
 
         // 写入 Gemini 目录的 settings.json (~/.gemini/settings.json)
-        use crate::gemini_config::write_google_oauth_settings;
-        write_google_oauth_settings()?;
+        if crate::sync_policy::should_sync_live(&AppType::Gemini) {
+            use crate::gemini_config::write_google_oauth_settings;
+            write_google_oauth_settings()?;
+        }
 
         Ok(())
     }
@@ -129,8 +132,10 @@ impl ProviderService {
         settings::ensure_security_auth_selected_type(Self::API_KEY_SECURITY_SELECTED_TYPE)?;
 
         // 写入 Gemini 目录的 settings.json (~/.gemini/settings.json)
-        use crate::gemini_config::write_generic_settings;
-        write_generic_settings()?;
+        if crate::sync_policy::should_sync_live(&AppType::Gemini) {
+            use crate::gemini_config::write_generic_settings;
+            write_generic_settings()?;
+        }
 
         Ok(())
     }
