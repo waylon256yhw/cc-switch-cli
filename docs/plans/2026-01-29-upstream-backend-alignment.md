@@ -11,8 +11,9 @@
 
 ## 0. 当前进度（截至 2026-01-30）
 
-- ✅ 已完成：Phase 1（正确性对齐）— `df101b0`
+- ✅ 已完成：Phase 1（正确性对齐）— `df101b0`、`9cc4045`
 - ✅ 已完成：Phase 2（数据结构/核心语义对齐）— `ae8e93f`、`6a7e15d`、`ba36f2a`、`07167e7`
+- ✅ 文档补充：说明“未初始化时跳过 live sync（默认策略）”— `bd42381`
 - ✅ 额外对齐：deeplink provider 导入能力（与 upstream 协议兼容的解析 + 导入）— `df101b0`、`dd39ca7`
 - ✅ 已落实：移除 OpenCode 范围（计划层面）— `53aca67`
 - ⏳ 未开始：Phase 3（Skills 系统重做）
@@ -99,12 +100,13 @@ CLI 特有：`interactive(TUI)`、`completions`。
 - [x] Gemini MCP 读写双向转换对齐：读取时补齐 `type`、反向映射 `httpUrl -> url`，并处理 `timeout` 兼容。（`df101b0`）
 - [x] `McpService::upsert_server` 对齐语义：当 apps 从 true→false 时，执行 `remove_server_from_*` 清理对应 live。（`df101b0`）
 - [x] Gemini provider live 写入改为 merge（保留现有 `settings.json` 的非 provider 字段，例如 `mcpServers`）。（`df101b0`）
-- [ ] 引入 “should_sync” 行为开关（或默认策略）：当目标 app 未初始化（目录/文件不存在）时是否跳过写入/删除（upstream 更保守，CLI 当前更主动）。
+- [x] 引入 “should_sync” 默认策略（auto）：当目标 app 未初始化（目录/文件不存在）时跳过写入/删除 live；并在 `provider switch`（CLI/TUI）输出一行 warning 提示。（`9cc4045`）
 
 **验收标准**
 - 从 Gemini 导入远端 MCP：不再因 `type/httpUrl` 差异导入为 0。
 - 更新 MCP 服务器并取消某 app 勾选：对应 app 的 live 配置中该 server 被移除。
 - `cc-switch provider switch --app gemini ...` 不会覆盖掉现有 `~/.gemini/settings.json` 的 `mcpServers`（或至少提供可控策略）。
+- 目标 app 未初始化时：不会创建对应配置目录/文件，并输出 warning 指引用户先初始化目标 CLI。
 
 ### Phase 2：Provider 数据结构与核心 API 面对齐（仍不引入 DB）
 
@@ -186,7 +188,7 @@ CLI 特有：`interactive(TUI)`、`completions`。
 
 1) **Codex auth 规则对齐**：强行同构 upstream 会破坏 CLI 现有兼容与测试；建议保留 CLI 行为并增强校验/提示。
 2) **Gemini settings.json 覆盖**：必须优先修复为 merge 策略或提供开关，否则有真实用户数据丢失风险。
-3) **“should_sync” 行为变化**：上游更保守；CLI 更主动。建议引入配置项并清晰文档化默认值。
+3) **“should_sync” 行为变化**：已落地默认安全策略（auto）+ 切换时 warning；如后续需要更强控制（always/never/auto），再扩展为可配置开关。
 4) **Proxy 引入后的并发一致性**：proxy 常驻与 CLI 命令并行写 SSOT 会出问题；proxy 默认应只读 SSOT（或引入文件锁/事务）。
 5) **skills symlink 的跨平台差异**：Windows 下需要 copy fallback，且要避免误删 unmanaged 内容。
 
