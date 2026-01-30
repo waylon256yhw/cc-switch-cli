@@ -731,7 +731,8 @@ impl SkillService {
     }
 
     pub fn list_installed() -> Result<Vec<InstalledSkill>, AppError> {
-        let index = Self::load_index()?;
+        let mut index = Self::load_index()?;
+        let _ = Self::migrate_ssot_if_pending(&mut index)?;
         let mut skills: Vec<InstalledSkill> = index.skills.values().cloned().collect();
         skills.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
         Ok(skills)
@@ -1188,7 +1189,8 @@ impl SkillService {
     }
 
     pub async fn list_skills(&self) -> Result<Vec<Skill>, AppError> {
-        let index = Self::load_index()?;
+        let mut index = Self::load_index()?;
+        let _ = Self::migrate_ssot_if_pending(&mut index)?;
         let discoverable = self.discover_available(index.repos.clone()).await?;
         let installed_dirs: HashSet<String> =
             index.skills.keys().map(|s| s.to_lowercase()).collect();
