@@ -11,7 +11,7 @@ pub fn manage_prompts_menu(app_type: &AppType) -> Result<(), AppError> {
     loop {
         clear_screen();
         println!("\n{}", highlight(texts::prompts_management()));
-        println!("{}", "─".repeat(60));
+        println!("{}", texts::tui_rule(60));
 
         let state = get_state()?;
         let prompts = PromptService::get_prompts(&state, app_type.clone())?;
@@ -28,7 +28,11 @@ pub fn manage_prompts_menu(app_type: &AppType) -> Result<(), AppError> {
             });
 
             for (_, prompt) in &prompt_list {
-                let marker = if prompt.enabled { "✓" } else { " " };
+                let marker = if prompt.enabled {
+                    texts::tui_marker_active()
+                } else {
+                    texts::tui_marker_inactive()
+                };
                 let name = if prompt.enabled {
                     format!("* {}", prompt.name)
                 } else {
@@ -90,7 +94,7 @@ fn view_current_prompt_interactive(
             "\n{}",
             highlight(texts::prompts_view_current().trim_start_matches("📋 "))
         );
-        println!("{}", "─".repeat(60));
+        println!("{}", texts::tui_rule(60));
         println!("ID:          {}", id);
         println!("Name:        {}", prompt.name);
         if let Some(desc) = &prompt.description {
@@ -98,7 +102,7 @@ fn view_current_prompt_interactive(
         }
         println!();
         println!("Content:");
-        println!("{}", "─".repeat(60));
+        println!("{}", texts::tui_rule(60));
         println!("{}", prompt.content);
     } else {
         println!("\n{}", info(texts::no_active_prompt()));
@@ -135,7 +139,7 @@ fn show_prompt_content_interactive(
 
     if let Some(prompt) = prompts.get(prompt_id) {
         println!("\n{}", highlight(&prompt.name));
-        println!("{}", "─".repeat(60));
+        println!("{}", texts::tui_rule(60));
         if let Some(desc) = &prompt.description {
             println!("Description: {}", desc);
             println!();

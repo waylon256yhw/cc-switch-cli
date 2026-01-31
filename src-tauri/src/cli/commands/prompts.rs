@@ -2,8 +2,9 @@ use clap::Subcommand;
 use std::sync::RwLock;
 
 use crate::app_config::{AppType, MultiAppConfig};
-use crate::cli::ui::{create_table, error, highlight, info, success};
+use crate::cli::ui::{create_table, highlight, info, success};
 use crate::error::AppError;
+use crate::prompt::Prompt;
 use crate::services::PromptService;
 use crate::store::AppState;
 
@@ -300,23 +301,40 @@ fn show_prompt(app_type: AppType, id: &str) -> Result<(), AppError> {
 }
 
 fn create_prompt(_app_type: AppType) -> Result<(), AppError> {
+    let state = get_state()?;
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs() as i64;
+    let id = format!("prompt-{timestamp}");
+
+    let name = format!("Prompt {}", chrono::Local::now().format("%Y-%m-%d %H:%M"));
+    let initial = "# Write your prompt here\n";
+
     println!("{}", highlight("Create New Prompt Preset"));
-    println!("{}", "=".repeat(50));
-    println!();
-    println!("{}", info("Note: Prompt creation requires text editing."));
-    println!("{}", info("For now, you can:"));
-    println!();
-    println!("1. Edit the configuration file directly:");
-    println!("   ~/.cc-switch/config.json");
-    println!();
-    println!("2. Or add a prompt preset manually to the prompts section.");
-    println!();
+    println!("{}", info("Opening external editor..."));
+
+    let edited =
+        edit::edit(initial).map_err(|e| AppError::Message(format!("editor failed: {e}")))?;
+
+    let content = edited.trim_end().to_string();
+    let prompt = Prompt {
+        id: id.clone(),
+        name,
+        content,
+        description: None,
+        enabled: false,
+        created_at: Some(timestamp),
+        updated_at: Some(timestamp),
+    };
+
+    PromptService::upsert_prompt(&state, _app_type.clone(), &id, prompt)?;
+
+    println!("{}", success(&format!("✓ Created prompt preset '{id}'")));
     println!(
         "{}",
-        error("Interactive prompt creation is not yet fully implemented.")
+        info("Tip: Use 'cc-switch prompts list' to view all presets.")
     );
-    println!("{}", info("Coming soon in the next update!"));
-
     Ok(())
 }
 
@@ -356,16 +374,34 @@ fn deactivate_prompt(app_type: AppType) -> Result<(), AppError> {
 }
 
 fn edit_prompt(_app_type: AppType, id: &str) -> Result<(), AppError> {
+    let state = get_state()?;
+    let prompts = PromptService::get_prompts(&state, _app_type.clone())?;
+    let Some(mut prompt) = prompts.get(id).cloned() else {
+        return Err(AppError::InvalidInput(format!(
+            "Prompt preset '{id}' not found"
+        )));
+    };
+
     println!("{}", info(&format!("Editing prompt preset '{}'...", id)));
-    println!("{}", error("Prompt editing is not yet implemented."));
-    println!(
-        "{}",
-        info("Please edit ~/.cc-switch/config.json directly for now.")
-    );
-    println!();
-    println!(
-        "{}",
-        info("Tip: Use 'cc-switch prompts show <id>' to view the current content.")
-    );
+    println!("{}", info("Opening external editor..."));
+
+    let edited = edit::edit(&prompt.content)
+        .map_err(|e| AppError::Message(format!("editor failed: {e}")))?;
+
+    if edited.trim_end() == prompt.content.trim_end() {
+        println!("{}", info("No changes detected."));
+        return Ok(());
+    }
+
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs() as i64;
+    prompt.content = edited.trim_end().to_string();
+    prompt.updated_at = Some(timestamp);
+
+    PromptService::upsert_prompt(&state, _app_type.clone(), id, prompt)?;
+
+    println!("{}", success(&format!("✓ Updated prompt preset '{id}'")));
     Ok(())
 }

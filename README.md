@@ -28,16 +28,42 @@ This project is a **CLI fork** of [CC-Switch](https://github.com/farion1231/cc-s
 
 ## 📸 Screenshots
 
+<div align="center">
+  <h3>Home</h3>
+  <img src="assets/screenshots/home-en.png" alt="Home" width="70%"/>
+</div>
+
+<br/>
+
+<table>
+  <tr>
+    <th>Switch</th>
+    <th>Settings</th>
+  </tr>
+  <tr>
+    <td><img src="assets/screenshots/switch-en.png" alt="Switch" width="100%"/></td>
+    <td><img src="assets/screenshots/settings-en.png" alt="Settings" width="100%"/></td>
+  </tr>
+</table>
+
+<details>
+  <summary>Legacy UI (no longer actively maintained)</summary>
+
+> [!WARNING]
+> The legacy interactive UI is temporarily not maintained. Please use the new TUI.
+
 <table>
   <tr>
     <th>Interactive Main Menu</th>
     <th>Provider Management</th>
   </tr>
   <tr>
-    <td><img src="assets/screenshots/main-en.png" alt="Main Menu" width="100%"/></td>
-    <td><img src="assets/screenshots/add-en.png" alt="Provider Management" width="100%"/></td>
+    <td><img src="assets/screenshots/main-en.png" alt="Legacy Main Menu" width="100%"/></td>
+    <td><img src="assets/screenshots/add-en.png" alt="Legacy Provider Management" width="100%"/></td>
   </tr>
 </table>
+
+</details>
 
 ---
 
@@ -208,10 +234,10 @@ Download the latest release from [GitHub Releases](https://github.com/saladday/c
 
 ```bash
 # Download Universal Binary (recommended, supports Apple Silicon + Intel)
-curl -LO https://github.com/saladday/cc-switch-cli/releases/latest/download/cc-switch-cli-v4.3.1-darwin-universal.tar.gz
+curl -LO https://github.com/saladday/cc-switch-cli/releases/latest/download/cc-switch-cli-darwin-universal.tar.gz
 
 # Extract
-tar -xzf cc-switch-cli-v4.3.1-darwin-universal.tar.gz
+tar -xzf cc-switch-cli-darwin-universal.tar.gz
 
 # Add execute permission
 chmod +x cc-switch
@@ -227,10 +253,10 @@ xattr -cr /usr/local/bin/cc-switch
 
 ```bash
 # Download
-curl -LO https://github.com/saladday/cc-switch-cli/releases/latest/download/cc-switch-cli-v4.3.1-linux-x64-musl.tar.gz
+curl -LO https://github.com/saladday/cc-switch-cli/releases/latest/download/cc-switch-cli-linux-x64-musl.tar.gz
 
 # Extract
-tar -xzf cc-switch-cli-v4.3.1-linux-x64-musl.tar.gz
+tar -xzf cc-switch-cli-linux-x64-musl.tar.gz
 
 # Add execute permission
 chmod +x cc-switch
@@ -243,8 +269,8 @@ sudo mv cc-switch /usr/local/bin/
 
 ```bash
 # For Raspberry Pi or ARM servers
-curl -LO https://github.com/saladday/cc-switch-cli/releases/latest/download/cc-switch-cli-v4.3.1-linux-arm64-musl.tar.gz
-tar -xzf cc-switch-cli-v4.3.1-linux-arm64-musl.tar.gz
+curl -LO https://github.com/saladday/cc-switch-cli/releases/latest/download/cc-switch-cli-linux-arm64-musl.tar.gz
+tar -xzf cc-switch-cli-linux-arm64-musl.tar.gz
 chmod +x cc-switch
 sudo mv cc-switch /usr/local/bin/
 ```
@@ -253,7 +279,7 @@ sudo mv cc-switch /usr/local/bin/
 
 ```powershell
 # Download the zip file
-# https://github.com/saladday/cc-switch-cli/releases/latest/download/cc-switch-cli-v4.3.1-windows-x64.zip
+# https://github.com/saladday/cc-switch-cli/releases/latest/download/cc-switch-cli-windows-x64.zip
 
 # After extracting, move cc-switch.exe to a PATH directory, e.g.:
 move cc-switch.exe C:\Windows\System32\

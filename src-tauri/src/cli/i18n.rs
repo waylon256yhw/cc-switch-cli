@@ -276,35 +276,1689 @@ pub mod texts {
         }
     }
 
+    pub fn interactive_requires_tty() -> &'static str {
+        if is_chinese() {
+            "交互模式需要在 TTY 终端中运行（请不要通过管道/重定向调用）。"
+        } else {
+            "Interactive mode requires a TTY (do not run with pipes/redirection)."
+        }
+    }
+
+    // Ratatui TUI (new interactive UI)
+    pub fn tui_app_title() -> &'static str {
+        "cc-switch"
+    }
+
+    pub fn tui_tabs_title() -> &'static str {
+        if is_chinese() {
+            "App"
+        } else {
+            "App"
+        }
+    }
+
+    pub fn tui_hint_app_switch() -> &'static str {
+        if is_chinese() {
+            "切换 App:"
+        } else {
+            "Switch App:"
+        }
+    }
+
+    pub fn tui_filter_icon() -> &'static str {
+        "🔎 "
+    }
+
+    pub fn tui_marker_active() -> &'static str {
+        "✓"
+    }
+
+    pub fn tui_marker_inactive() -> &'static str {
+        " "
+    }
+
+    pub fn tui_highlight_symbol() -> &'static str {
+        "➤ "
+    }
+
+    pub fn tui_toast_prefix_info() -> &'static str {
+        " ℹ "
+    }
+
+    pub fn tui_toast_prefix_success() -> &'static str {
+        " ✓ "
+    }
+
+    pub fn tui_toast_prefix_warning() -> &'static str {
+        " ! "
+    }
+
+    pub fn tui_toast_prefix_error() -> &'static str {
+        " ✗ "
+    }
+
+    pub fn tui_toast_invalid_json(details: &str) -> String {
+        if is_chinese() {
+            format!("JSON 无效：{details}")
+        } else {
+            format!("Invalid JSON: {details}")
+        }
+    }
+
+    pub fn tui_error_invalid_config_structure(e: &str) -> String {
+        if is_chinese() {
+            format!("配置结构无效：{e}")
+        } else {
+            format!("Invalid config structure: {e}")
+        }
+    }
+
+    pub fn tui_rule(width: usize) -> String {
+        if is_chinese() {
+            "─".repeat(width)
+        } else {
+            "─".repeat(width)
+        }
+    }
+
+    pub fn tui_rule_heavy(width: usize) -> String {
+        if is_chinese() {
+            "═".repeat(width)
+        } else {
+            "═".repeat(width)
+        }
+    }
+
+    pub fn tui_icon_app() -> &'static str {
+        "📱"
+    }
+
+    pub fn tui_default_config_filename() -> &'static str {
+        "config.json"
+    }
+
+    pub fn tui_default_config_export_path() -> &'static str {
+        "./config-export.json"
+    }
+
+    pub fn tui_default_common_snippet() -> &'static str {
+        "{}\n"
+    }
+
+    pub fn tui_latency_ms(ms: u128) -> String {
+        if is_chinese() {
+            format!("{ms} ms")
+        } else {
+            format!("{ms} ms")
+        }
+    }
+    pub fn tui_nav_title() -> &'static str {
+        if is_chinese() {
+            "菜单"
+        } else {
+            "Menu"
+        }
+    }
+
+    pub fn tui_filter_title() -> &'static str {
+        if is_chinese() {
+            "过滤"
+        } else {
+            "Filter"
+        }
+    }
+
+    pub fn tui_footer_global() -> &'static str {
+        if is_chinese() {
+            "[ ] 切换应用  ←→ 切换菜单/内容  ↑↓ 移动  Enter 详情  s 切换  / 过滤  Esc 返回  ? 帮助"
+        } else {
+            "[ ] switch app  ←→ focus menu/content  ↑↓ move  Enter details  s switch  / filter  Esc back  ? help"
+        }
+    }
+
+    pub fn tui_footer_group_nav() -> &'static str {
+        if is_chinese() {
+            "导航"
+        } else {
+            "NAV"
+        }
+    }
+
+    pub fn tui_footer_group_actions() -> &'static str {
+        if is_chinese() {
+            "功能"
+        } else {
+            "ACT"
+        }
+    }
+
+    pub fn tui_footer_nav_keys() -> &'static str {
+        if is_chinese() {
+            "←→ 菜单/内容  ↑↓ 移动"
+        } else {
+            "←→ menu/content  ↑↓ move"
+        }
+    }
+
+    pub fn tui_footer_action_keys() -> &'static str {
+        if is_chinese() {
+            "[ ] 切换应用  Enter 详情  s 切换  / 过滤  Esc 返回  ? 帮助"
+        } else {
+            "[ ] switch app  Enter details  s switch  / filter  Esc back  ? help"
+        }
+    }
+
+    pub fn tui_footer_action_keys_main() -> &'static str {
+        if is_chinese() {
+            "[ ] 切换应用  / 过滤  Esc 返回  ? 帮助"
+        } else {
+            "[ ] switch app  / filter  Esc back  ? help"
+        }
+    }
+
+    pub fn tui_footer_action_keys_providers() -> &'static str {
+        if is_chinese() {
+            "[ ] 切换应用  Enter 详情  s 切换  a 添加  e 编辑  d 删除  t 测速  / 过滤  Esc 返回  ? 帮助"
+        } else {
+            "[ ] switch app  Enter details  s switch  a add  e edit  d delete  t speedtest  / filter  Esc back  ? help"
+        }
+    }
+
+    pub fn tui_footer_action_keys_provider_detail() -> &'static str {
+        if is_chinese() {
+            "[ ] 切换应用  s 切换  e 编辑  t 测速  / 过滤  Esc 返回  ? 帮助"
+        } else {
+            "[ ] switch app  s switch  e edit  t speedtest  / filter  Esc back  ? help"
+        }
+    }
+
+    pub fn tui_footer_action_keys_mcp() -> &'static str {
+        if is_chinese() {
+            "[ ] 切换应用  x 启用/禁用  m 应用  a 添加  e 编辑  i 导入  v 校验命令  d 删除  / 过滤  Esc 返回  ? 帮助"
+        } else {
+            "[ ] switch app  x toggle  m apps  a add  e edit  i import  v validate  d delete  / filter  Esc back  ? help"
+        }
+    }
+
+    pub fn tui_footer_action_keys_prompts() -> &'static str {
+        if is_chinese() {
+            "[ ] 切换应用  Enter 查看  a 激活  x 取消激活  e 编辑  d 删除  / 过滤  Esc 返回  ? 帮助"
+        } else {
+            "[ ] switch app  Enter view  a activate  x deactivate  e edit  d delete  / filter  Esc back  ? help"
+        }
+    }
+
+    pub fn tui_footer_action_keys_config() -> &'static str {
+        if is_chinese() {
+            "[ ] 切换应用  Enter 打开  e 编辑片段  / 过滤  Esc 返回  ? 帮助"
+        } else {
+            "[ ] switch app  Enter open  e edit snippet  / filter  Esc back  ? help"
+        }
+    }
+
+    pub fn tui_footer_action_keys_common_snippet_view() -> &'static str {
+        if is_chinese() {
+            "a 应用  c 清空  e 编辑  ↑↓ 滚动  Esc 返回"
+        } else {
+            "a apply  c clear  e edit  ↑↓ scroll  Esc back"
+        }
+    }
+
+    pub fn tui_footer_action_keys_settings() -> &'static str {
+        if is_chinese() {
+            "[ ] 切换应用  Enter 应用  / 过滤  Esc 返回  ? 帮助"
+        } else {
+            "[ ] switch app  Enter apply  / filter  Esc back  ? help"
+        }
+    }
+
+    pub fn tui_footer_action_keys_global() -> &'static str {
+        if is_chinese() {
+            "[ ] 切换应用  / 过滤  Esc 返回  ? 帮助"
+        } else {
+            "[ ] switch app  / filter  Esc back  ? help"
+        }
+    }
+
+    pub fn tui_footer_filter_mode() -> &'static str {
+        if is_chinese() {
+            "输入关键字过滤，Enter 应用，Esc 清空并退出"
+        } else {
+            "Type to filter, Enter apply, Esc clear & exit"
+        }
+    }
+
+    pub fn tui_help_title() -> &'static str {
+        if is_chinese() {
+            "帮助"
+        } else {
+            "Help"
+        }
+    }
+
+    pub fn tui_help_text() -> &'static str {
+        if is_chinese() {
+            "[ ]  切换应用\n←→  切换菜单/内容焦点\n↑↓  移动\n/   过滤\nEsc  返回\n?   显示/关闭帮助\n\n页面快捷键（在页面内容区顶部显示）：\n- Providers: Enter 详情，s 切换，a 添加，e 编辑，d 删除，t 测速\n- Provider Detail: s 切换，e 编辑，t 测速\n- MCP: x 启用/禁用(当前应用)，m 选择应用，a 添加，e 编辑，i 导入，v 校验命令，d 删除\n- Prompts: Enter 查看，a 激活，x 取消激活(当前)，e 编辑，d 删除\n- Config: Enter 打开/执行，e 编辑片段\n- Settings: Enter 应用"
+        } else {
+            "[ ]  switch app\n←→  focus menu/content\n↑↓  move\n/   filter\nEsc  back\n?   toggle help\n\nPage keys (shown at the top of each page):\n- Providers: Enter details, s switch, a add, e edit, d delete, t speedtest\n- Provider Detail: s switch, e edit, t speedtest\n- MCP: x toggle current, m select apps, a add, e edit, i import, v validate, d delete\n- Prompts: Enter view, a activate, x deactivate active, e edit, d delete\n- Config: Enter open/run, e edit snippet\n- Settings: Enter apply"
+        }
+    }
+
+    pub fn tui_confirm_title() -> &'static str {
+        if is_chinese() {
+            "确认"
+        } else {
+            "Confirm"
+        }
+    }
+
+    pub fn tui_confirm_exit_title() -> &'static str {
+        if is_chinese() {
+            "退出"
+        } else {
+            "Exit"
+        }
+    }
+
+    pub fn tui_confirm_exit_message() -> &'static str {
+        if is_chinese() {
+            "确定退出 cc-switch？"
+        } else {
+            "Exit cc-switch?"
+        }
+    }
+
+    pub fn tui_confirm_yes_hint() -> &'static str {
+        if is_chinese() {
+            "y/Enter = 是"
+        } else {
+            "y/Enter = Yes"
+        }
+    }
+
+    pub fn tui_confirm_no_hint() -> &'static str {
+        if is_chinese() {
+            "n/Esc   = 否"
+        } else {
+            "n/Esc   = No"
+        }
+    }
+
+    pub fn tui_input_title() -> &'static str {
+        if is_chinese() {
+            "输入"
+        } else {
+            "Input"
+        }
+    }
+
+    pub fn tui_editor_text_field_title() -> &'static str {
+        if is_chinese() {
+            "文本"
+        } else {
+            "Text"
+        }
+    }
+
+    pub fn tui_editor_json_field_title() -> &'static str {
+        "JSON"
+    }
+
+    pub fn tui_editor_hint_view() -> &'static str {
+        if is_chinese() {
+            "Enter 编辑  ↑↓ 滚动  Ctrl+S 保存  Esc 返回"
+        } else {
+            "Enter edit  ↑↓ scroll  Ctrl+S save  Esc back"
+        }
+    }
+
+    pub fn tui_editor_hint_edit() -> &'static str {
+        if is_chinese() {
+            "编辑中：Esc 退出编辑  Ctrl+S 保存"
+        } else {
+            "Editing: Esc stop editing  Ctrl+S save"
+        }
+    }
+
+    pub fn tui_editor_discard_title() -> &'static str {
+        if is_chinese() {
+            "放弃修改"
+        } else {
+            "Discard Changes"
+        }
+    }
+
+    pub fn tui_editor_discard_message() -> &'static str {
+        if is_chinese() {
+            "有未保存的修改，确定放弃？"
+        } else {
+            "You have unsaved changes. Discard them?"
+        }
+    }
+
+    pub fn tui_speedtest_title() -> &'static str {
+        if is_chinese() {
+            "测速"
+        } else {
+            "Speedtest"
+        }
+    }
+
+    pub fn tui_main_hint() -> &'static str {
+        if is_chinese() {
+            "使用左侧菜单（↑↓ + Enter）。←→ 在菜单与内容间切换焦点。"
+        } else {
+            "Use the left menu (↑↓ + Enter). ←→ switches focus between menu and content."
+        }
+    }
+
+    pub fn tui_home_section_connection() -> &'static str {
+        if is_chinese() {
+            "Connection Details"
+        } else {
+            "Connection Details"
+        }
+    }
+
+    pub fn tui_home_section_context() -> &'static str {
+        if is_chinese() {
+            "Session Context"
+        } else {
+            "Session Context"
+        }
+    }
+
+    pub fn tui_home_status_online() -> &'static str {
+        if is_chinese() {
+            "Online"
+        } else {
+            "Online"
+        }
+    }
+
+    pub fn tui_home_status_offline() -> &'static str {
+        if is_chinese() {
+            "Offline"
+        } else {
+            "Offline"
+        }
+    }
+
+    pub fn tui_label_mcp_servers_active() -> &'static str {
+        if is_chinese() {
+            "Active"
+        } else {
+            "Active"
+        }
+    }
+
+    pub fn tui_na() -> &'static str {
+        "N/A"
+    }
+
+    pub fn tui_header_id() -> &'static str {
+        "ID"
+    }
+
+    pub fn tui_header_api_url() -> &'static str {
+        "API URL"
+    }
+
+    pub fn tui_label_id() -> &'static str {
+        "ID"
+    }
+
+    pub fn tui_label_api_url() -> &'static str {
+        "API URL"
+    }
+
+    pub fn tui_label_base_url() -> &'static str {
+        if is_chinese() {
+            "Base URL"
+        } else {
+            "Base URL"
+        }
+    }
+
+    pub fn tui_label_api_key() -> &'static str {
+        if is_chinese() {
+            "API Key"
+        } else {
+            "API Key"
+        }
+    }
+
+    pub fn tui_provider_not_found() -> &'static str {
+        if is_chinese() {
+            "未找到该供应商。"
+        } else {
+            "Provider not found."
+        }
+    }
+
+    pub fn tui_provider_title() -> &'static str {
+        if is_chinese() {
+            "供应商"
+        } else {
+            "Provider"
+        }
+    }
+
+    pub fn tui_provider_detail_title() -> &'static str {
+        if is_chinese() {
+            "供应商详情"
+        } else {
+            "Provider Detail"
+        }
+    }
+
+    pub fn tui_provider_add_title() -> &'static str {
+        if is_chinese() {
+            "新增供应商"
+        } else {
+            "Add Provider"
+        }
+    }
+
+    pub fn tui_provider_detail_keys() -> &'static str {
+        if is_chinese() {
+            "按键：s=切换  e=编辑  t=测速"
+        } else {
+            "Keys: s=switch  e=edit  t=speedtest"
+        }
+    }
+
+    pub fn tui_key_switch() -> &'static str {
+        if is_chinese() {
+            "切换"
+        } else {
+            "switch"
+        }
+    }
+
+    pub fn tui_key_edit() -> &'static str {
+        if is_chinese() {
+            "编辑"
+        } else {
+            "edit"
+        }
+    }
+
+    pub fn tui_key_speedtest() -> &'static str {
+        if is_chinese() {
+            "测速"
+        } else {
+            "speedtest"
+        }
+    }
+
+    pub fn tui_key_details() -> &'static str {
+        if is_chinese() {
+            "详情"
+        } else {
+            "details"
+        }
+    }
+
+    pub fn tui_key_view() -> &'static str {
+        if is_chinese() {
+            "查看"
+        } else {
+            "view"
+        }
+    }
+
+    pub fn tui_key_add() -> &'static str {
+        if is_chinese() {
+            "新增"
+        } else {
+            "add"
+        }
+    }
+
+    pub fn tui_key_delete() -> &'static str {
+        if is_chinese() {
+            "删除"
+        } else {
+            "delete"
+        }
+    }
+
+    pub fn tui_key_import() -> &'static str {
+        if is_chinese() {
+            "导入"
+        } else {
+            "import"
+        }
+    }
+
+    pub fn tui_key_toggle() -> &'static str {
+        if is_chinese() {
+            "启用/禁用"
+        } else {
+            "toggle"
+        }
+    }
+
+    pub fn tui_key_apps() -> &'static str {
+        if is_chinese() {
+            "应用"
+        } else {
+            "apps"
+        }
+    }
+
+    pub fn tui_key_validate() -> &'static str {
+        if is_chinese() {
+            "校验"
+        } else {
+            "validate"
+        }
+    }
+
+    pub fn tui_key_activate() -> &'static str {
+        if is_chinese() {
+            "激活"
+        } else {
+            "activate"
+        }
+    }
+
+    pub fn tui_key_deactivate() -> &'static str {
+        if is_chinese() {
+            "取消激活"
+        } else {
+            "deactivate"
+        }
+    }
+
+    pub fn tui_key_open() -> &'static str {
+        if is_chinese() {
+            "打开"
+        } else {
+            "open"
+        }
+    }
+
+    pub fn tui_key_apply() -> &'static str {
+        if is_chinese() {
+            "应用"
+        } else {
+            "apply"
+        }
+    }
+
+    pub fn tui_key_edit_snippet() -> &'static str {
+        if is_chinese() {
+            "编辑片段"
+        } else {
+            "edit snippet"
+        }
+    }
+
+    pub fn tui_key_close() -> &'static str {
+        if is_chinese() {
+            "关闭"
+        } else {
+            "close"
+        }
+    }
+
+    pub fn tui_key_cancel() -> &'static str {
+        if is_chinese() {
+            "取消"
+        } else {
+            "cancel"
+        }
+    }
+
+    pub fn tui_key_submit() -> &'static str {
+        if is_chinese() {
+            "提交"
+        } else {
+            "submit"
+        }
+    }
+
+    pub fn tui_key_yes() -> &'static str {
+        if is_chinese() {
+            "确认"
+        } else {
+            "confirm"
+        }
+    }
+
+    pub fn tui_key_no() -> &'static str {
+        if is_chinese() {
+            "返回"
+        } else {
+            "back"
+        }
+    }
+
+    pub fn tui_key_scroll() -> &'static str {
+        if is_chinese() {
+            "滚动"
+        } else {
+            "scroll"
+        }
+    }
+
+    pub fn tui_key_restore() -> &'static str {
+        if is_chinese() {
+            "恢复"
+        } else {
+            "restore"
+        }
+    }
+
+    pub fn tui_key_save() -> &'static str {
+        if is_chinese() {
+            "保存"
+        } else {
+            "save"
+        }
+    }
+
+    pub fn tui_key_edit_mode() -> &'static str {
+        if is_chinese() {
+            "编辑"
+        } else {
+            "edit"
+        }
+    }
+
+    pub fn tui_key_clear() -> &'static str {
+        if is_chinese() {
+            "清除"
+        } else {
+            "clear"
+        }
+    }
+
+    pub fn tui_key_move() -> &'static str {
+        if is_chinese() {
+            "移动"
+        } else {
+            "move"
+        }
+    }
+
+    pub fn tui_key_exit_edit() -> &'static str {
+        if is_chinese() {
+            "退出编辑"
+        } else {
+            "exit edit"
+        }
+    }
+
+    pub fn tui_key_select() -> &'static str {
+        if is_chinese() {
+            "打开/执行"
+        } else {
+            "open/run"
+        }
+    }
+
+    pub fn tui_key_deactivate_active() -> &'static str {
+        if is_chinese() {
+            "取消激活(当前)"
+        } else {
+            "deactivate active"
+        }
+    }
+
+    pub fn tui_provider_list_keys() -> &'static str {
+        if is_chinese() {
+            "按键：a=新增  e=编辑  Enter=详情  s=切换  /=搜索"
+        } else {
+            "Keys: a=add  e=edit  Enter=details  s=switch  /=filter"
+        }
+    }
+
+    pub fn tui_home_ascii_logo() -> &'static str {
+        // Same ASCII art across languages.
+        r#"                                  _  _         _     
+   ___  ___        ___ __      __(_)| |_  ___ | |__  
+  / __|/ __|_____ / __|\ \ /\ / /| || __|/ __|| '_ \ 
+ | (__| (__|_____|\__ \ \ V  V / | || |_| (__ | | | |
+  \___|\___|      |___/  \_/\_/  |_| \__|\___||_| |_|
+                                                      "#
+    }
+
+    pub fn tui_common_snippet_keys() -> &'static str {
+        if is_chinese() {
+            "按键：e=编辑  c=清除  a=应用  Esc=返回"
+        } else {
+            "Keys: e=edit  c=clear  a=apply  Esc=back"
+        }
+    }
+
+    pub fn tui_view_config_app(app: &str) -> String {
+        if is_chinese() {
+            format!("应用: {}", app)
+        } else {
+            format!("App: {}", app)
+        }
+    }
+
+    pub fn tui_view_config_provider(provider: &str) -> String {
+        if is_chinese() {
+            format!("供应商: {}", provider)
+        } else {
+            format!("Provider: {}", provider)
+        }
+    }
+
+    pub fn tui_view_config_api_url(url: &str) -> String {
+        if is_chinese() {
+            format!("API URL:  {}", url)
+        } else {
+            format!("API URL:  {}", url)
+        }
+    }
+
+    pub fn tui_view_config_mcp_servers(enabled: usize, total: usize) -> String {
+        if is_chinese() {
+            format!("MCP 服务器: {} 启用 / {} 总数", enabled, total)
+        } else {
+            format!("MCP servers: {} enabled / {} total", enabled, total)
+        }
+    }
+
+    pub fn tui_view_config_prompts(active: &str) -> String {
+        if is_chinese() {
+            format!("提示词: {}", active)
+        } else {
+            format!("Prompts: {}", active)
+        }
+    }
+
+    pub fn tui_view_config_config_file(path: &str) -> String {
+        if is_chinese() {
+            format!("配置文件: {}", path)
+        } else {
+            format!("Config file: {}", path)
+        }
+    }
+
+    pub fn tui_settings_header_language() -> &'static str {
+        if is_chinese() {
+            "语言"
+        } else {
+            "Language"
+        }
+    }
+
+    pub fn tui_settings_title() -> &'static str {
+        if is_chinese() {
+            "设置"
+        } else {
+            "Settings"
+        }
+    }
+
+    pub fn tui_config_title() -> &'static str {
+        if is_chinese() {
+            "配置"
+        } else {
+            "Configuration"
+        }
+    }
+
+    pub fn tui_config_item_export() -> &'static str {
+        if is_chinese() {
+            "导出配置"
+        } else {
+            "Export Config"
+        }
+    }
+
+    pub fn tui_config_item_import() -> &'static str {
+        if is_chinese() {
+            "导入配置"
+        } else {
+            "Import Config"
+        }
+    }
+
+    pub fn tui_config_item_backup() -> &'static str {
+        if is_chinese() {
+            "备份配置"
+        } else {
+            "Backup Config"
+        }
+    }
+
+    pub fn tui_config_item_restore() -> &'static str {
+        if is_chinese() {
+            "恢复配置"
+        } else {
+            "Restore Config"
+        }
+    }
+
+    pub fn tui_config_item_validate() -> &'static str {
+        if is_chinese() {
+            "验证配置"
+        } else {
+            "Validate Config"
+        }
+    }
+
+    pub fn tui_config_item_common_snippet() -> &'static str {
+        if is_chinese() {
+            "通用配置片段"
+        } else {
+            "Common Config Snippet"
+        }
+    }
+
+    pub fn tui_config_item_reset() -> &'static str {
+        if is_chinese() {
+            "重置配置"
+        } else {
+            "Reset Config"
+        }
+    }
+
+    pub fn tui_config_item_show_full() -> &'static str {
+        if is_chinese() {
+            "查看完整配置"
+        } else {
+            "Show Full Config"
+        }
+    }
+
+    pub fn tui_config_item_show_path() -> &'static str {
+        if is_chinese() {
+            "显示配置路径"
+        } else {
+            "Show Config Path"
+        }
+    }
+
+    pub fn tui_hint_esc_close() -> &'static str {
+        if is_chinese() {
+            "Esc = 关闭"
+        } else {
+            "Esc = Close"
+        }
+    }
+
+    pub fn tui_hint_enter_submit_esc_cancel() -> &'static str {
+        if is_chinese() {
+            "Enter = 提交, Esc = 取消"
+        } else {
+            "Enter = Submit, Esc = Cancel"
+        }
+    }
+
+    pub fn tui_hint_enter_restore_esc_cancel() -> &'static str {
+        if is_chinese() {
+            "Enter = 恢复, Esc = 取消"
+        } else {
+            "Enter = restore, Esc = cancel"
+        }
+    }
+
+    pub fn tui_backup_picker_title() -> &'static str {
+        if is_chinese() {
+            "选择备份（Enter 恢复）"
+        } else {
+            "Select Backup (Enter to restore)"
+        }
+    }
+
+    pub fn tui_speedtest_running(url: &str) -> String {
+        if is_chinese() {
+            format!("正在测速: {}", url)
+        } else {
+            format!("Running: {}", url)
+        }
+    }
+
+    pub fn tui_speedtest_title_with_url(url: &str) -> String {
+        if is_chinese() {
+            format!("测速: {}", url)
+        } else {
+            format!("Speedtest: {}", url)
+        }
+    }
+
+    pub fn tui_toast_provider_already_in_use() -> &'static str {
+        if is_chinese() {
+            "已在使用该供应商。"
+        } else {
+            "Already using this provider."
+        }
+    }
+
+    pub fn tui_toast_provider_cannot_delete_current() -> &'static str {
+        if is_chinese() {
+            "不能删除当前供应商。"
+        } else {
+            "Cannot delete current provider."
+        }
+    }
+
+    pub fn tui_confirm_delete_provider_title() -> &'static str {
+        if is_chinese() {
+            "删除供应商"
+        } else {
+            "Delete Provider"
+        }
+    }
+
+    pub fn tui_confirm_delete_provider_message(name: &str, id: &str) -> String {
+        if is_chinese() {
+            format!("确定删除供应商 '{}' ({})？", name, id)
+        } else {
+            format!("Delete provider '{}' ({})?", name, id)
+        }
+    }
+
+    pub fn tui_mcp_add_title() -> &'static str {
+        if is_chinese() {
+            "新增 MCP 服务器"
+        } else {
+            "Add MCP Server"
+        }
+    }
+
+    pub fn tui_mcp_edit_title(name: &str) -> String {
+        if is_chinese() {
+            format!("编辑 MCP 服务器: {}", name)
+        } else {
+            format!("Edit MCP Server: {}", name)
+        }
+    }
+
+    pub fn tui_mcp_apps_title(name: &str) -> String {
+        if is_chinese() {
+            format!("选择 MCP 应用: {}", name)
+        } else {
+            format!("Select MCP Apps: {}", name)
+        }
+    }
+
+    pub fn tui_toast_provider_no_api_url() -> &'static str {
+        if is_chinese() {
+            "该供应商未配置 API URL。"
+        } else {
+            "No API URL configured for this provider."
+        }
+    }
+
+    pub fn tui_input_validate_command_title() -> &'static str {
+        if is_chinese() {
+            "校验命令"
+        } else {
+            "Validate Command"
+        }
+    }
+
+    pub fn tui_input_validate_command_prompt() -> &'static str {
+        if is_chinese() {
+            "命令名："
+        } else {
+            "Command name:"
+        }
+    }
+
+    pub fn tui_confirm_delete_mcp_title() -> &'static str {
+        if is_chinese() {
+            "删除 MCP 服务器"
+        } else {
+            "Delete MCP Server"
+        }
+    }
+
+    pub fn tui_confirm_delete_mcp_message(name: &str, id: &str) -> String {
+        if is_chinese() {
+            format!("确定删除 MCP 服务器 '{}' ({})？", name, id)
+        } else {
+            format!("Delete MCP server '{}' ({})?", name, id)
+        }
+    }
+
+    pub fn tui_prompt_title(name: &str) -> String {
+        if is_chinese() {
+            format!("提示词: {}", name)
+        } else {
+            format!("Prompt: {}", name)
+        }
+    }
+
+    pub fn tui_toast_prompt_no_active_to_deactivate() -> &'static str {
+        if is_chinese() {
+            "没有可停用的活动提示词。"
+        } else {
+            "No active prompt to deactivate."
+        }
+    }
+
+    pub fn tui_toast_prompt_cannot_delete_active() -> &'static str {
+        if is_chinese() {
+            "不能删除正在启用的提示词。"
+        } else {
+            "Cannot delete the active prompt."
+        }
+    }
+
+    pub fn tui_confirm_delete_prompt_title() -> &'static str {
+        if is_chinese() {
+            "删除提示词"
+        } else {
+            "Delete Prompt"
+        }
+    }
+
+    pub fn tui_confirm_delete_prompt_message(name: &str, id: &str) -> String {
+        if is_chinese() {
+            format!("确定删除提示词 '{}' ({})？", name, id)
+        } else {
+            format!("Delete prompt '{}' ({})?", name, id)
+        }
+    }
+
+    pub fn tui_toast_prompt_edit_not_implemented() -> &'static str {
+        if is_chinese() {
+            "提示词编辑尚未实现。"
+        } else {
+            "Prompt editing not implemented yet."
+        }
+    }
+
+    pub fn tui_toast_prompt_edit_finished() -> &'static str {
+        if is_chinese() {
+            "提示词编辑完成"
+        } else {
+            "Prompt edit finished"
+        }
+    }
+
+    pub fn tui_toast_prompt_not_found(id: &str) -> String {
+        if is_chinese() {
+            format!("未找到提示词：{}", id)
+        } else {
+            format!("Prompt not found: {}", id)
+        }
+    }
+
+    pub fn tui_config_paths_title() -> &'static str {
+        if is_chinese() {
+            "配置路径"
+        } else {
+            "Configuration Paths"
+        }
+    }
+
+    pub fn tui_config_paths_config_file(path: &str) -> String {
+        if is_chinese() {
+            format!("配置文件: {}", path)
+        } else {
+            format!("Config file: {}", path)
+        }
+    }
+
+    pub fn tui_config_paths_config_dir(path: &str) -> String {
+        if is_chinese() {
+            format!("配置目录:  {}", path)
+        } else {
+            format!("Config dir:  {}", path)
+        }
+    }
+
+    pub fn tui_error_failed_to_read_config(e: &str) -> String {
+        if is_chinese() {
+            format!("读取配置失败: {e}")
+        } else {
+            format!("Failed to read config: {e}")
+        }
+    }
+
+    pub fn tui_config_export_title() -> &'static str {
+        if is_chinese() {
+            "导出配置"
+        } else {
+            "Export Configuration"
+        }
+    }
+
+    pub fn tui_config_export_prompt() -> &'static str {
+        if is_chinese() {
+            "导出路径："
+        } else {
+            "Export path:"
+        }
+    }
+
+    pub fn tui_config_import_title() -> &'static str {
+        if is_chinese() {
+            "导入配置"
+        } else {
+            "Import Configuration"
+        }
+    }
+
+    pub fn tui_config_import_prompt() -> &'static str {
+        if is_chinese() {
+            "从路径导入："
+        } else {
+            "Import from path:"
+        }
+    }
+
+    pub fn tui_config_backup_title() -> &'static str {
+        if is_chinese() {
+            "备份配置"
+        } else {
+            "Backup Configuration"
+        }
+    }
+
+    pub fn tui_config_backup_prompt() -> &'static str {
+        if is_chinese() {
+            "可选名称（留空使用默认值）："
+        } else {
+            "Optional name (empty for default):"
+        }
+    }
+
+    pub fn tui_toast_no_backups_found() -> &'static str {
+        if is_chinese() {
+            "未找到备份。"
+        } else {
+            "No backups found."
+        }
+    }
+
+    pub fn tui_error_failed_to_read(e: &str) -> String {
+        if is_chinese() {
+            format!("读取失败: {e}")
+        } else {
+            format!("Failed to read: {e}")
+        }
+    }
+
+    pub fn tui_common_snippet_title(app: &str) -> String {
+        if is_chinese() {
+            format!("通用片段 ({})", app)
+        } else {
+            format!("Common Snippet ({})", app)
+        }
+    }
+
+    pub fn tui_config_reset_title() -> &'static str {
+        if is_chinese() {
+            "重置配置"
+        } else {
+            "Reset Configuration"
+        }
+    }
+
+    pub fn tui_config_reset_message() -> &'static str {
+        if is_chinese() {
+            "重置为默认配置？（这将覆盖当前配置）"
+        } else {
+            "Reset to default configuration? (This will overwrite your current config)"
+        }
+    }
+
+    pub fn tui_toast_export_path_empty() -> &'static str {
+        if is_chinese() {
+            "导出路径为空。"
+        } else {
+            "Export path is empty."
+        }
+    }
+
+    pub fn tui_toast_import_path_empty() -> &'static str {
+        if is_chinese() {
+            "导入路径为空。"
+        } else {
+            "Import path is empty."
+        }
+    }
+
+    pub fn tui_confirm_import_message(path: &str) -> String {
+        if is_chinese() {
+            format!("确认从 '{}' 导入？", path)
+        } else {
+            format!("Import from '{}'?", path)
+        }
+    }
+
+    pub fn tui_toast_command_empty() -> &'static str {
+        if is_chinese() {
+            "命令为空。"
+        } else {
+            "Command is empty."
+        }
+    }
+
+    pub fn tui_confirm_restore_backup_title() -> &'static str {
+        if is_chinese() {
+            "恢复备份"
+        } else {
+            "Restore Backup"
+        }
+    }
+
+    pub fn tui_confirm_restore_backup_message(name: &str) -> String {
+        if is_chinese() {
+            format!("确认从备份 '{}' 恢复？", name)
+        } else {
+            format!("Restore from backup '{}'?", name)
+        }
+    }
+
+    pub fn tui_speedtest_line_url(url: &str) -> String {
+        format!("URL: {}", url)
+    }
+
+    pub fn tui_speedtest_line_latency(latency: &str) -> String {
+        if is_chinese() {
+            format!("延迟:   {latency}")
+        } else {
+            format!("Latency: {latency}")
+        }
+    }
+
+    pub fn tui_speedtest_line_status(status: &str) -> String {
+        if is_chinese() {
+            format!("状态:   {status}")
+        } else {
+            format!("Status:  {status}")
+        }
+    }
+
+    pub fn tui_speedtest_line_error(err: &str) -> String {
+        if is_chinese() {
+            format!("错误:   {err}")
+        } else {
+            format!("Error:   {err}")
+        }
+    }
+
+    pub fn tui_toast_speedtest_finished() -> &'static str {
+        if is_chinese() {
+            "测速完成。"
+        } else {
+            "Speedtest finished."
+        }
+    }
+
+    pub fn tui_toast_speedtest_failed(err: &str) -> String {
+        if is_chinese() {
+            format!("测速失败: {err}")
+        } else {
+            format!("Speedtest failed: {err}")
+        }
+    }
+
+    pub fn tui_toast_speedtest_unavailable(err: &str) -> String {
+        if is_chinese() {
+            format!("测速不可用: {err}")
+        } else {
+            format!("Speedtest unavailable: {err}")
+        }
+    }
+
+    pub fn tui_toast_speedtest_disabled() -> &'static str {
+        if is_chinese() {
+            "本次会话测速不可用。"
+        } else {
+            "Speedtest is disabled for this session."
+        }
+    }
+
+    pub fn tui_toast_speedtest_request_failed(err: &str) -> String {
+        if is_chinese() {
+            format!("测速请求失败: {err}")
+        } else {
+            format!("Failed to enqueue speedtest: {err}")
+        }
+    }
+
+    pub fn tui_toast_provider_deleted() -> &'static str {
+        if is_chinese() {
+            "供应商已删除。"
+        } else {
+            "Provider deleted."
+        }
+    }
+
+    pub fn tui_toast_provider_add_finished() -> &'static str {
+        if is_chinese() {
+            "供应商新增流程已完成。"
+        } else {
+            "Provider add flow finished."
+        }
+    }
+
+    pub fn tui_toast_provider_add_missing_fields() -> &'static str {
+        if is_chinese() {
+            "请在 JSON 中填写 id 和 name。"
+        } else {
+            "Please fill in id and name in JSON."
+        }
+    }
+
+    pub fn tui_toast_provider_missing_name() -> &'static str {
+        if is_chinese() {
+            "请在 JSON 中填写 name。"
+        } else {
+            "Please fill in name in JSON."
+        }
+    }
+
+    pub fn tui_toast_provider_add_failed() -> &'static str {
+        if is_chinese() {
+            "新增供应商失败。"
+        } else {
+            "Failed to add provider."
+        }
+    }
+
+    pub fn tui_toast_provider_edit_finished() -> &'static str {
+        if is_chinese() {
+            "供应商编辑流程已完成。"
+        } else {
+            "Provider edit flow finished."
+        }
+    }
+
+    pub fn tui_toast_mcp_updated() -> &'static str {
+        if is_chinese() {
+            "MCP 已更新。"
+        } else {
+            "MCP updated."
+        }
+    }
+
+    pub fn tui_toast_mcp_upserted() -> &'static str {
+        if is_chinese() {
+            "MCP 服务器已保存。"
+        } else {
+            "MCP server saved."
+        }
+    }
+
+    pub fn tui_toast_mcp_missing_fields() -> &'static str {
+        if is_chinese() {
+            "请在 JSON 中填写 id 和 name。"
+        } else {
+            "Please fill in id and name in JSON."
+        }
+    }
+
+    pub fn tui_toast_mcp_server_deleted() -> &'static str {
+        if is_chinese() {
+            "MCP 服务器已删除。"
+        } else {
+            "MCP server deleted."
+        }
+    }
+
+    pub fn tui_toast_mcp_server_not_found() -> &'static str {
+        if is_chinese() {
+            "未找到 MCP 服务器。"
+        } else {
+            "MCP server not found."
+        }
+    }
+
+    pub fn tui_toast_mcp_imported(count: usize) -> String {
+        if is_chinese() {
+            format!("已导入 {count} 个 MCP 服务器。")
+        } else {
+            format!("Imported {count} MCP server(s).")
+        }
+    }
+
+    pub fn tui_toast_live_sync_skipped_uninitialized(app: &str) -> String {
+        if is_chinese() {
+            format!(
+                "未检测到 {app} 客户端本地配置，已跳过写入 live 文件；先运行一次 {app} 初始化后再试。"
+            )
+        } else {
+            format!("Live sync skipped: {app} client not initialized; run it once to initialize, then retry.")
+        }
+    }
+
+    pub fn tui_toast_mcp_updated_live_sync_skipped(apps: &[&str]) -> String {
+        let list = if is_chinese() {
+            apps.join("、")
+        } else {
+            apps.join(", ")
+        };
+
+        if is_chinese() {
+            format!(
+                "MCP 已更新，但以下客户端未初始化，已跳过写入 live 文件：{list}；先运行一次对应客户端初始化后再试。"
+            )
+        } else {
+            format!(
+                "MCP updated, but live sync skipped for uninitialized client(s): {list}; run them once to initialize, then retry."
+            )
+        }
+    }
+
+    pub fn tui_toast_command_available_in_path(command: &str) -> String {
+        if is_chinese() {
+            format!("✓ 命令 '{command}' 在 PATH 中可用")
+        } else {
+            format!("✓ Command '{command}' is available in PATH")
+        }
+    }
+
+    pub fn tui_toast_command_not_found_in_path(command: &str) -> String {
+        if is_chinese() {
+            format!("✗ 命令 '{command}' 在 PATH 中未找到")
+        } else {
+            format!("✗ Command '{command}' not found in PATH")
+        }
+    }
+
+    pub fn tui_toast_prompt_activated() -> &'static str {
+        if is_chinese() {
+            "提示词已启用。"
+        } else {
+            "Prompt activated."
+        }
+    }
+
+    pub fn tui_toast_prompt_deactivated() -> &'static str {
+        if is_chinese() {
+            "提示词已停用。"
+        } else {
+            "Prompt deactivated."
+        }
+    }
+
+    pub fn tui_toast_prompt_deleted() -> &'static str {
+        if is_chinese() {
+            "提示词已删除。"
+        } else {
+            "Prompt deleted."
+        }
+    }
+
+    pub fn tui_toast_exported_to(path: &str) -> String {
+        if is_chinese() {
+            format!("已导出到 {}", path)
+        } else {
+            format!("Exported to {}", path)
+        }
+    }
+
+    pub fn tui_error_import_file_not_found(path: &str) -> String {
+        if is_chinese() {
+            format!("导入文件不存在: {}", path)
+        } else {
+            format!("Import file not found: {}", path)
+        }
+    }
+
+    pub fn tui_toast_imported_config() -> &'static str {
+        if is_chinese() {
+            "配置已导入。"
+        } else {
+            "Imported config."
+        }
+    }
+
+    pub fn tui_toast_imported_with_backup(backup_id: &str) -> String {
+        if is_chinese() {
+            format!("已导入（备份: {backup_id}）")
+        } else {
+            format!("Imported (backup: {backup_id})")
+        }
+    }
+
+    pub fn tui_toast_no_config_file_to_backup() -> &'static str {
+        if is_chinese() {
+            "没有可备份的配置文件。"
+        } else {
+            "No config file to backup."
+        }
+    }
+
+    pub fn tui_toast_backup_created(id: &str) -> String {
+        if is_chinese() {
+            format!("备份已创建: {id}")
+        } else {
+            format!("Backup created: {id}")
+        }
+    }
+
+    pub fn tui_toast_restored_from_backup() -> &'static str {
+        if is_chinese() {
+            "已从备份恢复。"
+        } else {
+            "Restored from backup."
+        }
+    }
+
+    pub fn tui_toast_restored_with_pre_backup(pre_backup: &str) -> String {
+        if is_chinese() {
+            format!("已恢复（恢复前备份: {pre_backup}）")
+        } else {
+            format!("Restored (pre-backup: {pre_backup})")
+        }
+    }
+
+    pub fn tui_toast_config_file_does_not_exist() -> &'static str {
+        if is_chinese() {
+            "配置文件不存在。"
+        } else {
+            "Config file does not exist."
+        }
+    }
+
+    pub fn tui_config_validation_title() -> &'static str {
+        if is_chinese() {
+            "配置校验"
+        } else {
+            "Config Validation"
+        }
+    }
+
+    pub fn tui_config_validation_failed_title() -> &'static str {
+        if is_chinese() {
+            "配置校验失败"
+        } else {
+            "Config Validation Failed"
+        }
+    }
+
+    pub fn tui_config_validation_ok() -> &'static str {
+        if is_chinese() {
+            "✓ 配置是有效的 JSON"
+        } else {
+            "✓ Configuration is valid JSON"
+        }
+    }
+
+    pub fn tui_config_validation_provider_count(app: &str, count: usize) -> String {
+        if is_chinese() {
+            format!("{app} 供应商:  {count}")
+        } else {
+            format!("{app} providers:  {count}")
+        }
+    }
+
+    pub fn tui_config_validation_mcp_servers(count: usize) -> String {
+        if is_chinese() {
+            format!("MCP 服务器:       {count}")
+        } else {
+            format!("MCP servers:       {count}")
+        }
+    }
+
+    pub fn tui_toast_validation_passed() -> &'static str {
+        if is_chinese() {
+            "校验通过。"
+        } else {
+            "Validation passed."
+        }
+    }
+
+    pub fn tui_toast_config_reset_to_defaults() -> &'static str {
+        if is_chinese() {
+            "配置已重置为默认值。"
+        } else {
+            "Config reset to defaults."
+        }
+    }
+
+    pub fn tui_toast_config_reset_with_backup(backup_id: &str) -> String {
+        if is_chinese() {
+            format!("配置已重置（备份: {backup_id}）")
+        } else {
+            format!("Config reset (backup: {backup_id})")
+        }
+    }
+
+    pub fn menu_home() -> &'static str {
+        if is_chinese() {
+            "🏠 首页"
+        } else {
+            "🏠 Home"
+        }
+    }
+
     pub fn menu_manage_providers() -> &'static str {
         if is_chinese() {
-            "🔌 管理供应商"
+            "🔌 供应商"
         } else {
-            "🔌 Manage Providers"
+            "🔌 Providers"
         }
     }
 
     pub fn menu_manage_mcp() -> &'static str {
         if is_chinese() {
-            "🛠️  管理 MCP 服务器"
+            "🛠️ MCP 服务器"
         } else {
-            "🛠️  Manage MCP Servers"
+            "🛠️ MCP Servers"
         }
     }
 
     pub fn menu_manage_prompts() -> &'static str {
         if is_chinese() {
-            "💬 管理提示词"
+            "💬 提示词"
         } else {
-            "💬 Manage Prompts"
+            "💬 Prompts"
         }
     }
 
     pub fn menu_manage_config() -> &'static str {
         if is_chinese() {
-            "⚙️  配置文件管理"
+            "⚙️ 配置"
         } else {
-            "⚙️  Manage Configuration"
+            "⚙️ Configuration"
         }
     }
 
@@ -316,11 +1970,12 @@ pub mod texts {
         }
     }
 
+    // Legacy interactive menu item (not used in ratatui TUI navigation).
     pub fn menu_view_config() -> &'static str {
         if is_chinese() {
-            "👁️  查看当前配置"
+            "👁️ 查看当前配置"
         } else {
-            "👁️  View Current Configuration"
+            "👁️ View Current Configuration"
         }
     }
 
@@ -334,9 +1989,9 @@ pub mod texts {
 
     pub fn menu_settings() -> &'static str {
         if is_chinese() {
-            "⚙️  设置"
+            "⚙️ 设置"
         } else {
-            "⚙️  Settings"
+            "⚙️ Settings"
         }
     }
 
@@ -775,6 +2430,94 @@ pub mod texts {
             "已取消。"
         } else {
             "Cancelled."
+        }
+    }
+
+    pub fn selection_cancelled() -> &'static str {
+        if is_chinese() {
+            "已取消选择"
+        } else {
+            "Selection cancelled"
+        }
+    }
+
+    pub fn invalid_selection() -> &'static str {
+        if is_chinese() {
+            "选择无效"
+        } else {
+            "Invalid selection"
+        }
+    }
+
+    pub fn available_backups() -> &'static str {
+        if is_chinese() {
+            "可用备份"
+        } else {
+            "Available Backups"
+        }
+    }
+
+    pub fn no_backups_found() -> &'static str {
+        if is_chinese() {
+            "未找到备份。"
+        } else {
+            "No backups found."
+        }
+    }
+
+    pub fn create_backup_first_hint() -> &'static str {
+        if is_chinese() {
+            "请先创建备份：cc-switch config backup"
+        } else {
+            "Create a backup first: cc-switch config backup"
+        }
+    }
+
+    pub fn found_backups(count: usize) -> String {
+        if is_chinese() {
+            format!("找到 {} 个备份：", count)
+        } else {
+            format!("Found {} backup(s):", count)
+        }
+    }
+
+    pub fn select_backup_to_restore() -> &'static str {
+        if is_chinese() {
+            "选择要恢复的备份："
+        } else {
+            "Select backup to restore:"
+        }
+    }
+
+    pub fn warning_title() -> &'static str {
+        if is_chinese() {
+            "警告："
+        } else {
+            "Warning:"
+        }
+    }
+
+    pub fn config_restore_warning_replace() -> &'static str {
+        if is_chinese() {
+            "这将用所选备份替换你当前的配置。"
+        } else {
+            "This will replace your current configuration with the selected backup."
+        }
+    }
+
+    pub fn config_restore_warning_pre_backup() -> &'static str {
+        if is_chinese() {
+            "系统会先创建一次当前状态的备份。"
+        } else {
+            "A backup of the current state will be created first."
+        }
+    }
+
+    pub fn config_restore_confirm_prompt() -> &'static str {
+        if is_chinese() {
+            "确认继续恢复？"
+        } else {
+            "Continue with restore?"
         }
     }
 
@@ -1802,6 +3545,30 @@ pub mod texts {
         }
     }
 
+    pub fn select_config_file_to_edit() -> &'static str {
+        if is_chinese() {
+            "选择要编辑的配置文件："
+        } else {
+            "Select config file to edit:"
+        }
+    }
+
+    pub fn provider_missing_auth_field() -> &'static str {
+        if is_chinese() {
+            "settings_config 中缺少 'auth' 字段"
+        } else {
+            "Missing 'auth' field in settings_config"
+        }
+    }
+
+    pub fn provider_missing_or_invalid_config_field() -> &'static str {
+        if is_chinese() {
+            "settings_config 中缺少或无效的 'config' 字段"
+        } else {
+            "Missing or invalid 'config' field in settings_config"
+        }
+    }
+
     pub fn edit_mode_interactive() -> &'static str {
         if is_chinese() {
             "📝 交互式编辑 (分步提示)"
@@ -2314,6 +4081,38 @@ pub mod texts {
         }
     }
 
+    pub fn config_common_snippet_title() -> &'static str {
+        if is_chinese() {
+            "通用配置片段"
+        } else {
+            "Common Config Snippet"
+        }
+    }
+
+    pub fn config_common_snippet_none_set() -> &'static str {
+        if is_chinese() {
+            "未设置通用配置片段。"
+        } else {
+            "No common config snippet is set."
+        }
+    }
+
+    pub fn config_common_snippet_set_for_app(app: &str) -> String {
+        if is_chinese() {
+            format!("✓ 已为应用 '{}' 设置通用配置片段", app)
+        } else {
+            format!("✓ Common config snippet set for app '{}'", app)
+        }
+    }
+
+    pub fn config_common_snippet_require_json_or_file() -> &'static str {
+        if is_chinese() {
+            "请提供 --json 或 --file"
+        } else {
+            "Please provide --json or --file"
+        }
+    }
+
     pub fn config_reset() -> &'static str {
         if is_chinese() {
             "🔄 重置配置"
@@ -2391,6 +4190,14 @@ pub mod texts {
             format!("JSON 无效：{err}")
         } else {
             format!("Invalid JSON: {err}")
+        }
+    }
+
+    pub fn failed_to_serialize_json(err: &str) -> String {
+        if is_chinese() {
+            format!("序列化 JSON 失败：{err}")
+        } else {
+            format!("Failed to serialize JSON: {err}")
         }
     }
 

@@ -18,7 +18,7 @@ pub fn manage_config_menu(app_type: &AppType) -> Result<(), AppError> {
     loop {
         clear_screen();
         println!("\n{}", highlight(texts::config_management()));
-        println!("{}", "─".repeat(60));
+        println!("{}", texts::tui_rule(60));
 
         let choices = vec![
             texts::config_show_path(),
@@ -42,8 +42,10 @@ pub fn manage_config_menu(app_type: &AppType) -> Result<(), AppError> {
         } else if choice == texts::config_show_full() {
             show_full_config_interactive()?;
         } else if choice == texts::config_export() {
-            let Some(path) =
-                prompt_text_with_default(texts::enter_export_path(), "./config-export.json")?
+            let Some(path) = prompt_text_with_default(
+                texts::enter_export_path(),
+                texts::tui_default_config_export_path(),
+            )?
             else {
                 continue;
             };
@@ -81,7 +83,7 @@ fn edit_common_config_snippet_interactive(app_type: &AppType) -> Result<(), AppE
                 .trim()
         )
     );
-    println!("{}", "─".repeat(60));
+    println!("{}", texts::tui_rule(60));
 
     let state = get_state()?;
     let current = {
@@ -152,10 +154,10 @@ fn edit_common_config_snippet_interactive(app_type: &AppType) -> Result<(), AppE
             }
 
             let pretty = serde_json::to_string_pretty(&value)
-                .map_err(|e| AppError::Message(format!("Failed to serialize JSON: {}", e)))?;
+                .map_err(|e| AppError::Message(texts::failed_to_serialize_json(&e.to_string())))?;
 
             println!("\n{}", highlight(texts::config_common_snippet()));
-            println!("{}", "─".repeat(60));
+            println!("{}", texts::tui_rule(60));
             println!("{}", pretty);
 
             let Some(confirm) = prompt_confirm(texts::confirm_save_changes(), false)? else {
@@ -222,7 +224,7 @@ fn show_config_path_interactive() -> Result<(), AppError> {
         "\n{}",
         highlight(texts::config_show_path().trim_start_matches("📍 "))
     );
-    println!("{}", "─".repeat(60));
+    println!("{}", texts::tui_rule(60));
     println!("Config file: {}", config_path.display());
     println!("Config dir:  {}", config_dir.display());
 
@@ -256,7 +258,7 @@ fn show_full_config_interactive() -> Result<(), AppError> {
         "\n{}",
         highlight(texts::config_show_full().trim_start_matches("👁️  "))
     );
-    println!("{}", "─".repeat(60));
+    println!("{}", texts::tui_rule(60));
     println!("{}", json);
 
     pause();
@@ -320,7 +322,7 @@ fn backup_config_interactive() -> Result<(), AppError> {
         "\n{}",
         highlight(texts::config_backup().trim_start_matches("💾 "))
     );
-    println!("{}", "─".repeat(60));
+    println!("{}", texts::tui_rule(60));
 
     // 询问是否使用自定义名称
     let Some(use_custom_name) = handle_inquire(
@@ -373,21 +375,21 @@ fn restore_config_interactive() -> Result<(), AppError> {
         "\n{}",
         highlight(texts::config_restore().trim_start_matches("♻️  "))
     );
-    println!("{}", "─".repeat(60));
+    println!("{}", texts::tui_rule(60));
 
     // 获取备份列表
     let config_path = get_app_config_path();
     let backups = ConfigService::list_backups(&config_path)?;
 
     if backups.is_empty() {
-        println!("\n{}", info("暂无可用备份"));
-        println!("{}", info("提示：使用 '💾 备份配置' 创建备份"));
+        println!("\n{}", info(texts::no_backups_found()));
+        println!("{}", info(texts::create_backup_first_hint()));
         pause();
         return Ok(());
     }
 
     // 显示备份列表供选择
-    println!("\n找到 {} 个备份：", backups.len());
+    println!("\n{}", texts::found_backups(backups.len()));
     println!();
 
     let choices: Vec<String> = backups
@@ -395,7 +397,7 @@ fn restore_config_interactive() -> Result<(), AppError> {
         .map(|b| format!("{} - {}", b.display_name, b.id))
         .collect();
 
-    let Some(selection) = prompt_select("选择要恢复的备份：", choices)? else {
+    let Some(selection) = prompt_select(texts::select_backup_to_restore(), choices)? else {
         return Ok(());
     };
 
@@ -403,15 +405,15 @@ fn restore_config_interactive() -> Result<(), AppError> {
     let selected_backup = backups
         .iter()
         .find(|b| selection.contains(&b.id))
-        .ok_or_else(|| AppError::Message("无效的选择".to_string()))?;
+        .ok_or_else(|| AppError::Message(texts::invalid_selection().to_string()))?;
 
     println!();
-    println!("{}", highlight("警告："));
-    println!("这将使用所选备份替换当前配置");
-    println!("当前配置会先自动备份");
+    println!("{}", highlight(texts::warning_title()));
+    println!("{}", texts::config_restore_warning_replace());
+    println!("{}", texts::config_restore_warning_pre_backup());
     println!();
 
-    let Some(confirm) = prompt_confirm("确认恢复？", false)? else {
+    let Some(confirm) = prompt_confirm(texts::config_restore_confirm_prompt(), false)? else {
         return Ok(());
     };
 
@@ -448,20 +450,23 @@ fn validate_config_interactive() -> Result<(), AppError> {
         "\n{}",
         highlight(texts::config_validate().trim_start_matches("✓ "))
     );
-    println!("{}", "─".repeat(60));
+    println!("{}", texts::tui_rule(60));
 
     if !config_path.exists() {
-        return Err(AppError::Message("Config file does not exist".to_string()));
+        return Err(AppError::Message(
+            texts::tui_toast_config_file_does_not_exist().to_string(),
+        ));
     }
 
     let content = std::fs::read_to_string(&config_path)
-        .map_err(|e| AppError::Message(format!("Failed to read config: {}", e)))?;
+        .map_err(|e| AppError::Message(texts::tui_error_failed_to_read_config(&e.to_string())))?;
 
     let _: serde_json::Value = serde_json::from_str(&content)
-        .map_err(|e| AppError::Message(format!("Invalid JSON: {}", e)))?;
+        .map_err(|e| AppError::Message(texts::tui_toast_invalid_json(&e.to_string())))?;
 
-    let config: MultiAppConfig = serde_json::from_str(&content)
-        .map_err(|e| AppError::Message(format!("Invalid config structure: {}", e)))?;
+    let config: MultiAppConfig = serde_json::from_str(&content).map_err(|e| {
+        AppError::Message(texts::tui_error_invalid_config_structure(&e.to_string()))
+    })?;
 
     println!("{}", success(texts::config_valid()));
     println!();

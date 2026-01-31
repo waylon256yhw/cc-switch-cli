@@ -1,7 +1,7 @@
 use clap::Subcommand;
 use std::sync::RwLock;
 
-use crate::app_config::{AppType, MultiAppConfig};
+use crate::app_config::{AppType, McpApps, McpServer, MultiAppConfig};
 use crate::cli::ui::{create_table, error, highlight, info, success};
 use crate::error::AppError;
 use crate::services::McpService;
@@ -293,37 +293,84 @@ fn import_servers(app_type: AppType) -> Result<(), AppError> {
 }
 
 fn add_server(_app_type: AppType) -> Result<(), AppError> {
-    println!("{}", highlight("Add New MCP Server"));
-    println!("{}", "=".repeat(50));
-    println!();
-    println!(
-        "{}",
-        info("Note: MCP server configuration is complex and app-specific.")
-    );
-    println!("{}", info("For now, please use one of these methods:"));
-    println!();
-    println!("1. Import from existing config:");
-    println!("   cc-switch mcp import --app claude");
-    println!();
-    println!("2. Edit config file directly:");
-    println!("   ~/.cc-switch/config.json");
-    println!();
-    println!(
-        "{}",
-        error("Interactive MCP server creation is not yet fully implemented.")
-    );
-    println!("{}", info("Coming soon in the next update!"));
+    let state = get_state()?;
 
+    let mut apps = McpApps::default();
+    apps.set_enabled_for(&_app_type, true);
+
+    let template = McpServer {
+        id: String::new(),
+        name: String::new(),
+        server: serde_json::json!({
+            "command": "",
+            "args": [],
+        }),
+        apps,
+        description: None,
+        homepage: None,
+        docs: None,
+        tags: vec![],
+    };
+    let initial = serde_json::to_string_pretty(&template)
+        .map_err(|e| AppError::Message(format!("failed to serialize template: {e}")))?;
+
+    println!("{}", highlight("Add New MCP Server"));
+    println!("{}", info("Opening external editor..."));
+    let edited =
+        edit::edit(&initial).map_err(|e| AppError::Message(format!("editor failed: {e}")))?;
+
+    let server: McpServer = serde_json::from_str(&edited)
+        .map_err(|e| AppError::Message(format!("invalid JSON: {e}")))?;
+    if server.id.trim().is_empty() || server.name.trim().is_empty() {
+        return Err(AppError::InvalidInput(
+            "missing required fields: id, name".to_string(),
+        ));
+    }
+
+    McpService::upsert_server(&state, server)?;
+
+    println!("{}", success("✓ MCP server saved"));
+    println!(
+        "{}",
+        info("Tip: Use 'cc-switch mcp list' to view all servers.")
+    );
     Ok(())
 }
 
 fn edit_server(_app_type: AppType, id: &str) -> Result<(), AppError> {
+    let state = get_state()?;
+    let servers = McpService::get_all_servers(&state)?;
+    let Some(existing) = servers.get(id).cloned() else {
+        return Err(AppError::InvalidInput(format!(
+            "MCP server '{id}' not found"
+        )));
+    };
+
+    let initial = serde_json::to_string_pretty(&existing)
+        .map_err(|e| AppError::Message(format!("failed to serialize server: {e}")))?;
+
     println!("{}", info(&format!("Editing MCP server '{}'...", id)));
-    println!("{}", error("MCP server editing is not yet implemented."));
-    println!(
-        "{}",
-        info("Please edit ~/.cc-switch/config.json directly for now.")
-    );
+    println!("{}", info("Opening external editor..."));
+    let edited =
+        edit::edit(&initial).map_err(|e| AppError::Message(format!("editor failed: {e}")))?;
+
+    if edited.trim_end() == initial.trim_end() {
+        println!("{}", info("No changes detected."));
+        return Ok(());
+    }
+
+    let mut server: McpServer = serde_json::from_str(&edited)
+        .map_err(|e| AppError::Message(format!("invalid JSON: {e}")))?;
+    server.id = id.to_string();
+    if server.name.trim().is_empty() {
+        return Err(AppError::InvalidInput(
+            "missing required field: name".to_string(),
+        ));
+    }
+
+    McpService::upsert_server(&state, server)?;
+
+    println!("{}", success("✓ MCP server updated"));
     Ok(())
 }
 

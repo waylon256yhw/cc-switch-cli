@@ -8,7 +8,7 @@ pub fn settings_menu() -> Result<(), AppError> {
     loop {
         clear_screen();
         println!("\n{}", highlight(texts::settings_title()));
-        println!("{}", "─".repeat(60));
+        println!("{}", texts::tui_rule(60));
 
         let lang = current_language();
         println!(

@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 
 use crate::app_config::{AppType, MultiAppConfig};
+use crate::cli::i18n::texts;
 use crate::cli::ui::{error, highlight, info, success, to_json};
 use crate::error::AppError;
 use crate::services::ConfigService;
@@ -130,7 +131,7 @@ fn show_common(app_type: AppType) -> Result<(), AppError> {
     let config = state.config.read()?;
     let snippet = config.common_config_snippets.get(&app_type).cloned();
 
-    println!("{}", highlight("Common Config Snippet"));
+    println!("{}", highlight(texts::config_common_snippet_title()));
     println!("{}", "=".repeat(50));
     println!("App: {}", app_type.as_str());
     println!();
@@ -140,7 +141,7 @@ fn show_common(app_type: AppType) -> Result<(), AppError> {
             println!("{}", s);
         }
         _ => {
-            println!("{}", info("No common config snippet is set."));
+            println!("{}", info(texts::config_common_snippet_none_set()));
         }
     }
 
@@ -159,20 +160,20 @@ fn set_common(
         fs::read_to_string(path).map_err(|e| AppError::io(path, e))?
     } else {
         return Err(AppError::InvalidInput(
-            "Please provide --json or --file".to_string(),
+            texts::config_common_snippet_require_json_or_file().to_string(),
         ));
     };
 
     let value: serde_json::Value = serde_json::from_str(&raw)
-        .map_err(|e| AppError::InvalidInput(format!("Invalid JSON: {e}")))?;
+        .map_err(|e| AppError::InvalidInput(texts::tui_toast_invalid_json(&e.to_string())))?;
     if !value.is_object() {
         return Err(AppError::InvalidInput(
-            "Common config must be a JSON object".to_string(),
+            texts::common_config_snippet_not_object().to_string(),
         ));
     }
 
     let pretty = serde_json::to_string_pretty(&value)
-        .map_err(|e| AppError::Message(format!("Failed to serialize JSON: {e}")))?;
+        .map_err(|e| AppError::Message(texts::failed_to_serialize_json(&e.to_string())))?;
 
     let state = get_state()?;
     {
@@ -183,10 +184,7 @@ fn set_common(
 
     println!(
         "{}",
-        success(&format!(
-            "✓ Common config snippet set for app '{}'",
-            app_type.as_str()
-        ))
+        success(&texts::config_common_snippet_set_for_app(app_type.as_str()))
     );
 
     if apply {
@@ -475,7 +473,7 @@ fn restore_config(backup_id: Option<&str>, file_path: Option<&Path>) -> Result<(
         println!("A backup of the current state will be created first.");
         println!();
 
-        let confirm = inquire::Confirm::new("Continue with restore?")
+        let confirm = inquire::Confirm::new(texts::config_restore_confirm_prompt())
             .with_default(false)
             .prompt()
             .map_err(|e| AppError::Message(format!("Prompt failed: {}", e)))?;
@@ -509,20 +507,20 @@ fn restore_config(backup_id: Option<&str>, file_path: Option<&Path>) -> Result<(
     }
 
     // 情况3：无参数，显示交互式列表
-    println!("{}", highlight("Available Backups"));
+    println!("{}", highlight(texts::available_backups()));
     println!("{}", "=".repeat(50));
 
     let backups = ConfigService::list_backups(&config_path)?;
 
     if backups.is_empty() {
         println!();
-        println!("{}", info("No backups found."));
-        println!("{}", info("Create a backup first: cc-switch config backup"));
+        println!("{}", info(texts::no_backups_found()));
+        println!("{}", info(texts::create_backup_first_hint()));
         return Ok(());
     }
 
     println!();
-    println!("Found {} backup(s):", backups.len());
+    println!("{}", texts::found_backups(backups.len()));
     println!();
 
     let choices: Vec<String> = backups
@@ -530,28 +528,28 @@ fn restore_config(backup_id: Option<&str>, file_path: Option<&Path>) -> Result<(
         .map(|b| format!("{} - {}", b.display_name, b.id))
         .collect();
 
-    let selection = inquire::Select::new("Select backup to restore:", choices)
+    let selection = inquire::Select::new(texts::select_backup_to_restore(), choices)
         .prompt()
-        .map_err(|_| AppError::Message("Selection cancelled".to_string()))?;
+        .map_err(|_| AppError::Message(texts::selection_cancelled().to_string()))?;
 
     let selected_backup = backups
         .iter()
         .find(|b| selection.contains(&b.id))
-        .ok_or_else(|| AppError::Message("Invalid selection".to_string()))?;
+        .ok_or_else(|| AppError::Message(texts::invalid_selection().to_string()))?;
 
     println!();
-    println!("{}", highlight("Warning:"));
-    println!("This will replace your current configuration with the selected backup.");
-    println!("A backup of the current state will be created first.");
+    println!("{}", highlight(texts::warning_title()));
+    println!("{}", texts::config_restore_warning_replace());
+    println!("{}", texts::config_restore_warning_pre_backup());
     println!();
 
-    let confirm = inquire::Confirm::new("Continue with restore?")
+    let confirm = inquire::Confirm::new(texts::config_restore_confirm_prompt())
         .with_default(false)
         .prompt()
         .map_err(|e| AppError::Message(format!("Prompt failed: {}", e)))?;
 
     if !confirm {
-        println!("{}", info("Cancelled."));
+        println!("{}", info(texts::cancelled()));
         return Ok(());
     }
 

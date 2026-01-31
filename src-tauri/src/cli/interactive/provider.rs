@@ -13,7 +13,7 @@ pub fn manage_providers_menu(app_type: &AppType) -> Result<(), AppError> {
     loop {
         clear_screen();
         println!("\n{}", highlight(texts::provider_management()));
-        println!("{}", "─".repeat(60));
+        println!("{}", texts::tui_rule(60));
 
         let state = get_state()?;
         let providers = ProviderService::list(&state, app_type.clone())?;
@@ -34,7 +34,11 @@ pub fn manage_providers_menu(app_type: &AppType) -> Result<(), AppError> {
             });
 
             for (id, provider) in &provider_list {
-                let marker = if *id == &current_id { "✓" } else { " " };
+                let marker = if *id == &current_id {
+                    texts::tui_marker_active()
+                } else {
+                    texts::tui_marker_inactive()
+                };
                 let name = if *id == &current_id {
                     format!("* {}", provider.name)
                 } else {
@@ -91,7 +95,7 @@ fn view_provider_detail(
         let providers = ProviderService::list(state, app_type.clone())?;
         if let Some(provider) = providers.get(current_id) {
             println!("\n{}", highlight(texts::current_provider_details()));
-            println!("{}", "═".repeat(60));
+            println!("{}", texts::tui_rule_heavy(60));
 
             // 基本信息
             println!("\n{}", highlight(texts::basic_info_section_header()));
@@ -149,7 +153,7 @@ fn view_provider_detail(
                 println!("  API URL:  {}", api_url);
             }
 
-            println!("\n{}", "─".repeat(60));
+            println!("\n{}", texts::tui_rule(60));
 
             // Show action menu
             println!();
@@ -299,7 +303,7 @@ fn switch_provider_interactive(
         .split('(')
         .nth(1)
         .and_then(|s| s.strip_suffix(')'))
-        .ok_or_else(|| AppError::Message("Invalid choice".to_string()))?;
+        .ok_or_else(|| AppError::Message(texts::invalid_selection_format().to_string()))?;
 
     let skip_live_sync = !crate::sync_policy::should_sync_live(app_type);
     ProviderService::switch(state, app_type.clone(), id)?;
@@ -345,7 +349,7 @@ fn delete_provider_interactive(
         .split('(')
         .nth(1)
         .and_then(|s| s.strip_suffix(')'))
-        .ok_or_else(|| AppError::Message("Invalid choice".to_string()))?;
+        .ok_or_else(|| AppError::Message(texts::invalid_selection_format().to_string()))?;
 
     let confirm_prompt = texts::confirm_delete(id);
     let Some(confirm) = prompt_confirm(&confirm_prompt, false)? else {
@@ -469,7 +473,7 @@ fn edit_provider_interactive(
             // 获取当前供应商数据
             let original = providers
                 .get(&selected_id)
-                .ok_or_else(|| AppError::Message("Provider not found".to_string()))?;
+                .ok_or_else(|| AppError::Message(texts::provider_not_found(&selected_id)))?;
 
             // 调用 JSON 编辑器
             edit_provider_with_json_editor(app_type, &selected_id, original)?;
@@ -501,7 +505,7 @@ fn edit_provider_with_json_editor(
         AppType::Codex => {
             // Codex: ask user which file to edit
             let Some(file_choice) = prompt_select(
-                "Select config file to edit:",
+                texts::select_config_file_to_edit(),
                 vec![CodexConfigFile::Auth, CodexConfigFile::Config],
             )?
             else {
@@ -512,7 +516,7 @@ fn edit_provider_with_json_editor(
                 CodexConfigFile::Auth => {
                     // Edit auth.json (JSON format)
                     let auth_value = original.settings_config.get("auth").ok_or_else(|| {
-                        AppError::Message("Missing 'auth' field in settings_config".to_string())
+                        AppError::Message(texts::provider_missing_auth_field().to_string())
                     })?;
 
                     let json_str = serde_json::to_string_pretty(auth_value)
@@ -528,7 +532,7 @@ fn edit_provider_with_json_editor(
                         .and_then(|v| v.as_str())
                         .ok_or_else(|| {
                             AppError::Message(
-                                "Missing or invalid 'config' field in settings_config".to_string(),
+                                texts::provider_missing_or_invalid_config_field().to_string(),
                             )
                         })?;
 
@@ -631,7 +635,7 @@ fn edit_provider_with_json_editor(
 
         // 5. Display summary
         println!("\n{}", highlight(texts::provider_summary()));
-        println!("{}", "─".repeat(60));
+        println!("{}", texts::tui_rule(60));
         display_provider_summary(&updated_provider, app_type);
 
         // 6. Confirm save
