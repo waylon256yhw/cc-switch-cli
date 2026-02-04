@@ -1293,6 +1293,14 @@ pub mod texts {
         }
     }
 
+    pub fn tui_key_confirm() -> &'static str {
+        if is_chinese() {
+            "确认"
+        } else {
+            "confirm"
+        }
+    }
+
     pub fn tui_key_deactivate_active() -> &'static str {
         if is_chinese() {
             "取消激活(当前)"
@@ -5452,6 +5460,152 @@ pub mod texts {
             format!("更新失败: {}", err)
         } else {
             format!("Update failed: {}", err)
+        }
+    }
+
+    // TUI Update texts
+
+    pub fn tui_toast_update_worker_unavailable(err: &str) -> String {
+        if is_chinese() {
+            format!("更新服务不可用: {err}")
+        } else {
+            format!("Update worker unavailable: {err}")
+        }
+    }
+
+    pub fn tui_toast_already_up_to_date() -> &'static str {
+        if is_chinese() {
+            "已是最新版本"
+        } else {
+            "Already up to date"
+        }
+    }
+
+    pub fn tui_toast_update_check_failed(err: &str) -> String {
+        if is_chinese() {
+            format!("检查更新失败: {err}")
+        } else {
+            format!("Failed to check for updates: {err}")
+        }
+    }
+
+    pub fn tui_toast_update_no_asset() -> &'static str {
+        if is_chinese() {
+            "未找到适用于此平台的更新包"
+        } else {
+            "No update package found for this platform"
+        }
+    }
+
+    pub fn tui_update_restart_required() -> String {
+        if is_chinese() {
+            "✓ 更新成功！请重启 cc-switch。".to_string()
+        } else {
+            "✓ Update complete! Please restart cc-switch.".to_string()
+        }
+    }
+
+    pub fn tui_update_applied() -> String {
+        if is_chinese() {
+            "✓ 更新成功！".to_string()
+        } else {
+            "✓ Update complete!".to_string()
+        }
+    }
+
+    pub fn tui_update_manual_required(path: &str, instructions: &str) -> String {
+        if is_chinese() {
+            format!("⚠ 需要手动安装\n\n下载位置: {path}\n\n请运行:\n{instructions}")
+        } else {
+            format!("⚠ Manual installation required\n\nDownloaded to: {path}\n\nRun:\n{instructions}")
+        }
+    }
+
+    pub fn tui_update_download_failed(err: &str) -> String {
+        if is_chinese() {
+            format!("✗ 下载失败: {err}")
+        } else {
+            format!("✗ Download failed: {err}")
+        }
+    }
+
+    pub fn tui_settings_check_update() -> &'static str {
+        if is_chinese() {
+            "检查更新"
+        } else {
+            "Check for Updates"
+        }
+    }
+
+    pub fn tui_update_checking_title() -> &'static str {
+        if is_chinese() {
+            "检查更新"
+        } else {
+            "Checking for Updates"
+        }
+    }
+
+    pub fn tui_update_checking_message() -> &'static str {
+        if is_chinese() {
+            "正在检查最新版本..."
+        } else {
+            "Checking for latest version..."
+        }
+    }
+
+    pub fn tui_update_available_title() -> &'static str {
+        if is_chinese() {
+            "发现新版本"
+        } else {
+            "Update Available"
+        }
+    }
+
+    pub fn tui_update_version_info(current: &str, latest: &str) -> String {
+        if is_chinese() {
+            format!("当前版本: v{current}\n最新版本: v{latest}")
+        } else {
+            format!("Current: v{current}\nLatest:  v{latest}")
+        }
+    }
+
+    pub fn tui_update_btn_update() -> &'static str {
+        if is_chinese() {
+            "更新"
+        } else {
+            "Update"
+        }
+    }
+
+    pub fn tui_update_btn_cancel() -> &'static str {
+        if is_chinese() {
+            "取消"
+        } else {
+            "Cancel"
+        }
+    }
+
+    pub fn tui_update_downloading_title() -> &'static str {
+        if is_chinese() {
+            "下载更新"
+        } else {
+            "Downloading Update"
+        }
+    }
+
+    pub fn tui_update_downloading_progress(progress: u8) -> String {
+        if is_chinese() {
+            format!("下载中... {progress}%")
+        } else {
+            format!("Downloading... {progress}%")
+        }
+    }
+
+    pub fn tui_update_result_title() -> &'static str {
+        if is_chinese() {
+            "更新结果"
+        } else {
+            "Update Result"
         }
     }
 }

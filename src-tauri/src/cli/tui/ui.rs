@@ -14,7 +14,7 @@ use crate::app_config::AppType;
 use crate::cli::i18n::texts;
 
 use super::{
-    app::{App, ConfigItem, EditorMode, Focus, Overlay, ToastKind},
+    app::{App, ConfigItem, EditorMode, Focus, Overlay, SettingsItem, ToastKind},
     data::{McpRow, ProviderRow, UiData},
     form::{FormFocus, FormState, GeminiAuthType, McpAddField, ProviderAddField},
     route::{NavItem, Route},
@@ -2554,18 +2554,6 @@ fn render_config(
 }
 
 fn render_settings(frame: &mut Frame<'_>, app: &App, area: Rect, theme: &super::theme::Theme) {
-    let header = Row::new(vec![Cell::from(
-        pad2(texts::tui_settings_header_language()),
-    )])
-    .style(Style::default().fg(theme.dim).add_modifier(Modifier::BOLD));
-
-    let rows = [
-        crate::cli::i18n::Language::English,
-        crate::cli::i18n::Language::Chinese,
-    ]
-    .iter()
-    .map(|lang| Row::new(vec![Cell::from(pad2(lang.display_name()))]));
-
     let outer = Block::default()
         .borders(Borders::ALL)
         .border_type(BorderType::Plain)
@@ -2588,15 +2576,82 @@ fn render_settings(frame: &mut Frame<'_>, app: &App, area: Rect, theme: &super::
         );
     }
 
-    let table = Table::new(rows, [Constraint::Min(10)])
-        .header(header)
-        .block(Block::default().borders(Borders::NONE))
-        .row_highlight_style(selection_style(theme))
-        .highlight_symbol(highlight_symbol(theme));
+    let languages = [
+        crate::cli::i18n::Language::English,
+        crate::cli::i18n::Language::Chinese,
+    ];
 
-    let mut state = TableState::default();
-    state.select(Some(app.language_idx));
-    frame.render_stateful_widget(table, inset_left(chunks[1], 2), &mut state);
+    let mut rows: Vec<Row> = Vec::new();
+
+    for (idx, item) in SettingsItem::ALL.iter().enumerate() {
+        let is_section_selected = app.settings_idx == idx;
+
+        match item {
+            SettingsItem::Language => {
+                let header_style = if is_section_selected {
+                    Style::default()
+                        .fg(theme.accent)
+                        .add_modifier(Modifier::BOLD)
+                } else {
+                    Style::default().fg(theme.dim).add_modifier(Modifier::BOLD)
+                };
+
+                rows.push(
+                    Row::new(vec![Cell::from(pad2(texts::tui_settings_header_language()))])
+                        .style(header_style),
+                );
+
+                for (lang_idx, lang) in languages.iter().enumerate() {
+                    let is_lang_selected = is_section_selected && app.language_idx == lang_idx;
+                    let style = if is_lang_selected {
+                        selection_style(theme)
+                    } else {
+                        Style::default()
+                    };
+
+                    let prefix = if is_lang_selected {
+                        highlight_symbol(theme)
+                    } else {
+                        "  "
+                    };
+
+                    rows.push(
+                        Row::new(vec![Cell::from(format!("{}{}", prefix, lang.display_name()))])
+                            .style(style),
+                    );
+                }
+
+                rows.push(Row::new(vec![Cell::from("")]));
+            }
+            SettingsItem::CheckUpdate => {
+                let style = if is_section_selected {
+                    selection_style(theme)
+                } else {
+                    Style::default()
+                };
+
+                let prefix = if is_section_selected {
+                    highlight_symbol(theme)
+                } else {
+                    "  "
+                };
+
+                rows.push(
+                    Row::new(vec![Cell::from(format!(
+                        "{}{}",
+                        prefix,
+                        texts::tui_settings_check_update()
+                    ))])
+                    .style(style),
+                );
+            }
+        }
+    }
+
+    let table = Table::new(rows, [Constraint::Min(10)])
+        .block(Block::default().borders(Borders::NONE));
+
+    frame.render_widget(table, inset_left(chunks[1], 2));
 }
 
 fn render_footer(frame: &mut Frame<'_>, app: &App, area: Rect, theme: &super::theme::Theme) {
@@ -3115,6 +3170,159 @@ fn render_overlay(frame: &mut Frame<'_>, app: &App, data: &UiData, theme: &super
                 .collect::<Vec<_>>();
 
             frame.render_widget(Paragraph::new(shown).wrap(Wrap { trim: false }), chunks[1]);
+        }
+        Overlay::UpdateAvailable {
+            current,
+            latest,
+            selected,
+            ..
+        } => {
+            let area = centered_rect(60, 40, frame.area());
+            frame.render_widget(Clear, area);
+
+            let outer = Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Plain)
+                .border_style(Style::default().fg(theme.dim))
+                .title(texts::tui_update_available_title());
+            frame.render_widget(outer.clone(), area);
+            let inner = outer.inner(area);
+
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Length(1),
+                    Constraint::Min(0),
+                    Constraint::Length(3),
+                ])
+                .split(inner);
+
+            render_key_bar(
+                frame,
+                chunks[0],
+                theme,
+                &[
+                    ("←→", texts::tui_key_select()),
+                    ("Enter", texts::tui_key_confirm()),
+                    ("Esc", texts::tui_key_cancel()),
+                ],
+            );
+
+            frame.render_widget(
+                Paragraph::new(texts::tui_update_version_info(current, latest))
+                    .alignment(Alignment::Center)
+                    .wrap(Wrap { trim: false }),
+                chunks[1],
+            );
+
+            let btn_update = texts::tui_update_btn_update();
+            let btn_cancel = texts::tui_update_btn_cancel();
+
+            let btn_style_normal = Style::default().fg(theme.dim);
+            let btn_style_selected = Style::default().fg(theme.accent).add_modifier(Modifier::BOLD);
+
+            let update_style = if *selected == 0 {
+                btn_style_selected
+            } else {
+                btn_style_normal
+            };
+            let cancel_style = if *selected == 1 {
+                btn_style_selected
+            } else {
+                btn_style_normal
+            };
+
+            let buttons = Line::from(vec![
+                Span::styled(format!("[ {} ]", btn_update), update_style),
+                Span::raw("    "),
+                Span::styled(format!("[ {} ]", btn_cancel), cancel_style),
+            ]);
+
+            frame.render_widget(
+                Paragraph::new(buttons).alignment(Alignment::Center),
+                chunks[2],
+            );
+        }
+        Overlay::UpdateDownloading { progress } => {
+            let area = centered_rect(60, 30, frame.area());
+            frame.render_widget(Clear, area);
+
+            let spinner = match app.tick % 4 {
+                1 => "/",
+                2 => "-",
+                3 => "\\",
+                _ => "|",
+            };
+            let full_title = format!("{spinner} {}", texts::tui_update_downloading_title());
+
+            let outer = Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Plain)
+                .border_style(Style::default().fg(theme.dim))
+                .title(full_title);
+            frame.render_widget(outer.clone(), area);
+            let inner = outer.inner(area);
+
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Length(1),
+                    Constraint::Length(2),
+                    Constraint::Length(1),
+                    Constraint::Min(0),
+                ])
+                .split(inner);
+
+            render_key_bar(frame, chunks[0], theme, &[("Esc", texts::tui_key_cancel())]);
+
+            frame.render_widget(
+                Paragraph::new(Line::raw(texts::tui_update_downloading_progress(*progress)))
+                    .alignment(Alignment::Center),
+                chunks[1],
+            );
+
+            let bar_width = chunks[2].width.saturating_sub(2) as usize;
+            let filled = (bar_width * (*progress as usize) / 100).min(bar_width);
+            let empty = bar_width.saturating_sub(filled);
+            let bar = format!("[{}{}]", "█".repeat(filled), "░".repeat(empty));
+            frame.render_widget(
+                Paragraph::new(Line::raw(bar)).alignment(Alignment::Center),
+                chunks[2],
+            );
+        }
+        Overlay::UpdateResult { success, message } => {
+            let area = centered_rect(70, 50, frame.area());
+            frame.render_widget(Clear, area);
+
+            let title_style = if *success {
+                Style::default().fg(theme.accent)
+            } else {
+                Style::default().fg(Color::Red)
+            };
+
+            let outer = Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Plain)
+                .border_style(title_style)
+                .title(texts::tui_update_result_title());
+            frame.render_widget(outer.clone(), area);
+            let inner = outer.inner(area);
+
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Length(1), Constraint::Min(0)])
+                .split(inner);
+
+            render_key_bar(frame, chunks[0], theme, &[("Enter/Esc", texts::tui_key_close())]);
+
+            let lines = message
+                .lines()
+                .map(|s| Line::raw(s.to_string()))
+                .collect::<Vec<_>>();
+            frame.render_widget(
+                Paragraph::new(lines).wrap(Wrap { trim: false }),
+                chunks[1],
+            );
         }
     }
 }

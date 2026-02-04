@@ -17,9 +17,10 @@ use crate::app_config::{AppType, MultiAppConfig};
 use crate::cli::i18n::{set_language, texts};
 use crate::error::AppError;
 use crate::provider::Provider;
+use crate::services::update::{ApplyResult, ReleaseAsset, ReleaseInfo};
 use crate::services::{
     skill::SkillRepo, ConfigService, EndpointLatency, McpService, PromptService, ProviderService,
-    SkillService,
+    SkillService, UpdateService,
 };
 
 use app::{Action, App, EditorSubmit, Overlay, TextViewState, ToastKind};
@@ -65,6 +66,29 @@ struct SkillsSystem {
     _handle: std::thread::JoinHandle<()>,
 }
 
+enum UpdateReq {
+    Check,
+    Download { asset: ReleaseAsset },
+}
+
+enum UpdateMsg {
+    CheckFinished {
+        result: Result<(ReleaseInfo, bool), String>,
+    },
+    DownloadProgress {
+        progress: u8,
+    },
+    DownloadFinished {
+        result: Result<ApplyResult, String>,
+    },
+}
+
+struct UpdateSystem {
+    req_tx: mpsc::Sender<UpdateReq>,
+    result_rx: mpsc::Receiver<UpdateMsg>,
+    _handle: std::thread::JoinHandle<()>,
+}
+
 pub fn run(app_override: Option<AppType>) -> Result<(), AppError> {
     let _panic_hook = PanicRestoreHookGuard::install();
     let mut terminal = TuiTerminal::new()?;
@@ -96,6 +120,17 @@ pub fn run(app_override: Option<AppType>) -> Result<(), AppError> {
         }
     };
 
+    let update = match start_update_system() {
+        Ok(system) => Some(system),
+        Err(err) => {
+            app.push_toast(
+                texts::tui_toast_update_worker_unavailable(&err.to_string()),
+                ToastKind::Warning,
+            );
+            None
+        }
+    };
+
     loop {
         app.last_size = terminal.size()?;
         terminal.draw(|f| ui::render(f, &app, &data))?;
@@ -116,6 +151,13 @@ pub fn run(app_override: Option<AppType>) -> Result<(), AppError> {
             }
         }
 
+        // Handle async Update results (non-blocking).
+        if let Some(update) = update.as_ref() {
+            while let Ok(msg) = update.result_rx.try_recv() {
+                handle_update_msg(&mut app, msg);
+            }
+        }
+
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
         if event::poll(timeout).map_err(|e| AppError::Message(e.to_string()))? {
             match event::read().map_err(|e| AppError::Message(e.to_string()))? {
@@ -127,6 +169,7 @@ pub fn run(app_override: Option<AppType>) -> Result<(), AppError> {
                         &mut data,
                         speedtest.as_ref().map(|s| &s.req_tx),
                         skills.as_ref().map(|s| &s.req_tx),
+                        update.as_ref().map(|s| &s.req_tx),
                         action,
                     ) {
                         if matches!(
@@ -256,12 +299,90 @@ fn handle_skills_msg(app: &mut App, data: &mut UiData, msg: SkillsMsg) -> Result
     Ok(())
 }
 
+fn handle_update_msg(app: &mut App, msg: UpdateMsg) {
+    match msg {
+        UpdateMsg::CheckFinished { result } => {
+            // Ignore if user already closed the checking overlay
+            if !matches!(app.overlay, Overlay::Loading { .. }) {
+                return;
+            }
+            match result {
+                Ok((release, is_newer)) => {
+                    if is_newer {
+                        let current = UpdateService::current_version().to_string();
+                        let latest = release.version().to_string();
+                        if let Some(asset) = UpdateService::find_matching_asset(&release) {
+                            app.overlay = Overlay::UpdateAvailable {
+                                current,
+                                latest,
+                                asset: asset.clone(),
+                                selected: 0,
+                            };
+                        } else {
+                            app.overlay = Overlay::None;
+                            app.push_toast(
+                                texts::tui_toast_update_no_asset(),
+                                ToastKind::Warning,
+                            );
+                        }
+                    } else {
+                        app.overlay = Overlay::None;
+                        app.push_toast(texts::tui_toast_already_up_to_date(), ToastKind::Success);
+                    }
+                }
+                Err(err) => {
+                    app.overlay = Overlay::None;
+                    app.push_toast(
+                        texts::tui_toast_update_check_failed(&err),
+                        ToastKind::Error,
+                    );
+                }
+            }
+        }
+        UpdateMsg::DownloadProgress { progress } => {
+            if let Overlay::UpdateDownloading { progress: ref mut p } = app.overlay {
+                *p = progress;
+            }
+        }
+        UpdateMsg::DownloadFinished { result } => {
+            // Ignore if user cancelled (closed the downloading overlay)
+            if !matches!(app.overlay, Overlay::UpdateDownloading { .. }) {
+                return;
+            }
+            match result {
+                Ok(apply_result) => {
+                    let (success, message) = match apply_result {
+                        ApplyResult::Applied { requires_restart } => {
+                            if requires_restart {
+                                (true, texts::tui_update_restart_required())
+                            } else {
+                                (true, texts::tui_update_applied())
+                            }
+                        }
+                        ApplyResult::ManualRequired { path, instructions } => {
+                            (false, texts::tui_update_manual_required(&path.display().to_string(), &instructions))
+                        }
+                    };
+                    app.overlay = Overlay::UpdateResult { success, message };
+                }
+                Err(err) => {
+                    app.overlay = Overlay::UpdateResult {
+                        success: false,
+                        message: texts::tui_update_download_failed(&err),
+                    };
+                }
+            }
+        }
+    }
+}
+
 fn handle_action(
     _terminal: &mut TuiTerminal,
     app: &mut App,
     data: &mut UiData,
     speedtest_req_tx: Option<&mpsc::Sender<String>>,
     skills_req_tx: Option<&mpsc::Sender<SkillsReq>>,
+    update_req_tx: Option<&mpsc::Sender<UpdateReq>>,
     action: Action,
 ) -> Result<(), AppError> {
     match action {
@@ -1010,6 +1131,38 @@ fn handle_action(
             app.push_toast(texts::language_changed(), ToastKind::Success);
             Ok(())
         }
+
+        Action::CheckUpdate => {
+            let Some(tx) = update_req_tx else {
+                return Err(AppError::Message(
+                    texts::tui_toast_update_worker_unavailable("worker not available").to_string(),
+                ));
+            };
+            app.overlay = Overlay::Loading {
+                title: texts::tui_update_checking_title().to_string(),
+                message: texts::tui_update_checking_message().to_string(),
+            };
+            tx.send(UpdateReq::Check)
+                .map_err(|e| AppError::Message(e.to_string()))?;
+            Ok(())
+        }
+
+        Action::ConfirmUpdate { asset } => {
+            let Some(tx) = update_req_tx else {
+                return Err(AppError::Message(
+                    texts::tui_toast_update_worker_unavailable("worker not available").to_string(),
+                ));
+            };
+            app.overlay = Overlay::UpdateDownloading { progress: 0 };
+            tx.send(UpdateReq::Download { asset })
+                .map_err(|e| AppError::Message(e.to_string()))?;
+            Ok(())
+        }
+
+        Action::CancelUpdate => {
+            app.overlay = Overlay::None;
+            Ok(())
+        }
     }
 }
 
@@ -1220,6 +1373,88 @@ fn parse_repo_spec(raw: &str) -> Result<SkillRepo, AppError> {
         enabled: true,
         skills_path: None,
     })
+}
+
+fn start_update_system() -> Result<UpdateSystem, AppError> {
+    let (result_tx, result_rx) = mpsc::channel::<UpdateMsg>();
+    let (req_tx, req_rx) = mpsc::channel::<UpdateReq>();
+
+    let handle = std::thread::Builder::new()
+        .name("cc-switch-update".to_string())
+        .spawn(move || update_worker_loop(req_rx, result_tx))
+        .map_err(|e| AppError::IoContext {
+            context: "failed to spawn update worker thread".to_string(),
+            source: e,
+        })?;
+
+    Ok(UpdateSystem {
+        req_tx,
+        result_rx,
+        _handle: handle,
+    })
+}
+
+fn update_worker_loop(rx: mpsc::Receiver<UpdateReq>, tx: mpsc::Sender<UpdateMsg>) {
+    let rt = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
+        Ok(rt) => rt,
+        Err(e) => {
+            let err = e.to_string();
+            while let Ok(req) = rx.recv() {
+                match req {
+                    UpdateReq::Check => {
+                        let _ = tx.send(UpdateMsg::CheckFinished {
+                            result: Err(err.clone()),
+                        });
+                    }
+                    UpdateReq::Download { .. } => {
+                        let _ = tx.send(UpdateMsg::DownloadFinished {
+                            result: Err(err.clone()),
+                        });
+                    }
+                }
+            }
+            return;
+        }
+    };
+
+    while let Ok(req) = rx.recv() {
+        match req {
+            UpdateReq::Check => {
+                let result = rt.block_on(async {
+                    let release = UpdateService::check_latest().await?;
+                    let current = UpdateService::current_version();
+                    let is_newer = UpdateService::is_newer(current, release.version());
+                    Ok::<_, AppError>((release, is_newer))
+                });
+                let _ = tx.send(UpdateMsg::CheckFinished {
+                    result: result.map_err(|e| e.to_string()),
+                });
+            }
+            UpdateReq::Download { asset } => {
+                let tx_clone = tx.clone();
+                let last_percent = std::sync::atomic::AtomicU8::new(0);
+
+                let result = rt.block_on(async {
+                    let path = UpdateService::download_asset(&asset, |progress| {
+                        let percent = (progress.round() as u8).min(100);
+                        let prev = last_percent.swap(percent, std::sync::atomic::Ordering::Relaxed);
+                        if percent != prev {
+                            let _ = tx_clone.send(UpdateMsg::DownloadProgress { progress: percent });
+                        }
+                    })
+                    .await?;
+                    UpdateService::apply_update(&path)
+                });
+
+                let _ = tx.send(UpdateMsg::DownloadFinished {
+                    result: result.map_err(|e| e.to_string()),
+                });
+            }
+        }
+    }
 }
 
 #[cfg(test)]

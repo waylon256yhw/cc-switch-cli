@@ -6,6 +6,7 @@ use crate::app_config::AppType;
 use crate::cli::i18n::texts;
 use crate::cli::i18n::Language;
 use crate::services::skill::SyncMethod;
+use crate::services::update::ReleaseAsset;
 
 use super::data::UiData;
 use super::form::{
@@ -146,6 +147,19 @@ pub enum Overlay {
         url: String,
         lines: Vec<String>,
         scroll: usize,
+    },
+    UpdateAvailable {
+        current: String,
+        latest: String,
+        asset: ReleaseAsset,
+        selected: usize,
+    },
+    UpdateDownloading {
+        progress: u8,
+    },
+    UpdateResult {
+        success: bool,
+        message: String,
     },
 }
 
@@ -450,6 +464,12 @@ pub enum Action {
     EditorDiscard,
 
     SetLanguage(Language),
+
+    CheckUpdate,
+    ConfirmUpdate {
+        asset: ReleaseAsset,
+    },
+    CancelUpdate,
 }
 
 #[derive(Debug, Clone)]
@@ -477,6 +497,16 @@ impl ConfigItem {
         ConfigItem::CommonSnippet,
         ConfigItem::Reset,
     ];
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SettingsItem {
+    Language,
+    CheckUpdate,
+}
+
+impl SettingsItem {
+    pub const ALL: [SettingsItem; 2] = [SettingsItem::Language, SettingsItem::CheckUpdate];
 }
 
 #[derive(Debug, Clone)]
@@ -508,6 +538,7 @@ pub struct App {
     pub skills_unmanaged_results: Vec<crate::services::skill::UnmanagedSkill>,
     pub skills_unmanaged_selected: HashSet<String>,
     pub config_idx: usize,
+    pub settings_idx: usize,
     pub language_idx: usize,
 }
 
@@ -540,6 +571,7 @@ impl App {
             skills_unmanaged_results: Vec::new(),
             skills_unmanaged_selected: HashSet::new(),
             config_idx: 0,
+            settings_idx: 0,
             language_idx: 0,
         }
     }
@@ -1350,14 +1382,42 @@ impl App {
         let languages = [Language::English, Language::Chinese];
         match key.code {
             KeyCode::Up => {
-                self.language_idx = self.language_idx.saturating_sub(1);
+                match SettingsItem::ALL.get(self.settings_idx) {
+                    Some(SettingsItem::Language) => {
+                        if self.language_idx > 0 {
+                            self.language_idx -= 1;
+                        } else {
+                            self.settings_idx = self.settings_idx.saturating_sub(1);
+                        }
+                    }
+                    _ => {
+                        self.settings_idx = self.settings_idx.saturating_sub(1);
+                    }
+                }
                 Action::None
             }
             KeyCode::Down => {
-                self.language_idx = (self.language_idx + 1).min(languages.len() - 1);
+                match SettingsItem::ALL.get(self.settings_idx) {
+                    Some(SettingsItem::Language) => {
+                        if self.language_idx < languages.len() - 1 {
+                            self.language_idx += 1;
+                        } else {
+                            self.settings_idx =
+                                (self.settings_idx + 1).min(SettingsItem::ALL.len() - 1);
+                        }
+                    }
+                    _ => {
+                        self.settings_idx =
+                            (self.settings_idx + 1).min(SettingsItem::ALL.len() - 1);
+                    }
+                }
                 Action::None
             }
-            KeyCode::Enter => Action::SetLanguage(languages[self.language_idx]),
+            KeyCode::Enter => match SettingsItem::ALL.get(self.settings_idx) {
+                Some(SettingsItem::Language) => Action::SetLanguage(languages[self.language_idx]),
+                Some(SettingsItem::CheckUpdate) => Action::CheckUpdate,
+                None => Action::None,
+            },
             _ => Action::None,
         }
     }
@@ -1673,6 +1733,36 @@ impl App {
                     if !lines.is_empty() {
                         *scroll = (*scroll + 1).min(lines.len() - 1);
                     }
+                    Action::None
+                }
+                _ => Action::None,
+            },
+            Overlay::UpdateAvailable {
+                selected, asset, ..
+            } => match key.code {
+                KeyCode::Left | KeyCode::Right | KeyCode::Tab => {
+                    *selected = 1 - *selected;
+                    Action::None
+                }
+                KeyCode::Enter => {
+                    if *selected == 0 {
+                        Action::ConfirmUpdate {
+                            asset: asset.clone(),
+                        }
+                    } else {
+                        Action::CancelUpdate
+                    }
+                }
+                KeyCode::Esc => Action::CancelUpdate,
+                _ => Action::None,
+            },
+            Overlay::UpdateDownloading { .. } => match key.code {
+                KeyCode::Esc => Action::CancelUpdate,
+                _ => Action::None,
+            },
+            Overlay::UpdateResult { .. } => match key.code {
+                KeyCode::Esc | KeyCode::Enter | KeyCode::Char('q') => {
+                    self.overlay = Overlay::None;
                     Action::None
                 }
                 _ => Action::None,
