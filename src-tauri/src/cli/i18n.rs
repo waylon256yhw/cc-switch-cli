@@ -5282,4 +5282,176 @@ pub mod texts {
             "← Back"
         }
     }
+
+    // ============================================
+    // UPDATE FUNCTIONALITY (更新功能)
+    // ============================================
+
+    pub fn check_for_updates() -> &'static str {
+        if is_chinese() {
+            "🔄 检查更新"
+        } else {
+            "🔄 Check for Updates"
+        }
+    }
+
+    pub fn update_current_version() -> &'static str {
+        if is_chinese() {
+            "当前版本:"
+        } else {
+            "Current version:"
+        }
+    }
+
+    pub fn update_checking() -> &'static str {
+        if is_chinese() {
+            "正在检查更新..."
+        } else {
+            "Checking for updates..."
+        }
+    }
+
+    pub fn update_latest_version() -> &'static str {
+        if is_chinese() {
+            "最新版本:"
+        } else {
+            "Latest version:"
+        }
+    }
+
+    pub fn update_available() -> &'static str {
+        if is_chinese() {
+            "✓ 有新版本可用！"
+        } else {
+            "✓ Update available!"
+        }
+    }
+
+    pub fn update_up_to_date() -> &'static str {
+        if is_chinese() {
+            "✓ 已是最新版本"
+        } else {
+            "✓ Already up to date"
+        }
+    }
+
+    pub fn update_already_latest(version: &str) -> String {
+        if is_chinese() {
+            format!("✓ 已是最新版本 ({})", version)
+        } else {
+            format!("✓ Already up to date ({})", version)
+        }
+    }
+
+    pub fn update_available_version() -> &'static str {
+        if is_chinese() {
+            "发现新版本:"
+        } else {
+            "Update available:"
+        }
+    }
+
+    pub fn update_no_asset_for_platform() -> &'static str {
+        if is_chinese() {
+            "未找到适用于当前平台的安装包"
+        } else {
+            "No asset found for current platform"
+        }
+    }
+
+    pub fn update_asset_found() -> &'static str {
+        if is_chinese() {
+            "找到安装包:"
+        } else {
+            "Asset found:"
+        }
+    }
+
+    pub fn update_confirm_download() -> &'static str {
+        if is_chinese() {
+            "下载并安装？"
+        } else {
+            "Download and install?"
+        }
+    }
+
+    pub fn update_downloading() -> &'static str {
+        if is_chinese() {
+            "下载中..."
+        } else {
+            "Downloading..."
+        }
+    }
+
+    pub fn update_download_complete() -> &'static str {
+        if is_chinese() {
+            "下载完成"
+        } else {
+            "Download complete"
+        }
+    }
+
+    pub fn update_applying() -> &'static str {
+        if is_chinese() {
+            "正在应用更新..."
+        } else {
+            "Applying update..."
+        }
+    }
+
+    pub fn update_success() -> &'static str {
+        if is_chinese() {
+            "✓ 更新成功！"
+        } else {
+            "✓ Update successful!"
+        }
+    }
+
+    pub fn update_success_restart() -> &'static str {
+        if is_chinese() {
+            "✓ 更新成功！请重启 cc-switch。"
+        } else {
+            "✓ Update complete! Please restart cc-switch."
+        }
+    }
+
+    pub fn update_manual_required() -> &'static str {
+        if is_chinese() {
+            "⚠ 需要手动安装（权限不足）"
+        } else {
+            "⚠ Manual installation required (insufficient permissions)"
+        }
+    }
+
+    pub fn update_downloaded_to() -> &'static str {
+        if is_chinese() {
+            "已下载至"
+        } else {
+            "Downloaded to"
+        }
+    }
+
+    pub fn update_run_command() -> &'static str {
+        if is_chinese() {
+            "请运行以下命令完成安装："
+        } else {
+            "Run the following command to complete installation:"
+        }
+    }
+
+    pub fn update_check_failed() -> &'static str {
+        if is_chinese() {
+            "检查更新失败"
+        } else {
+            "Failed to check for updates"
+        }
+    }
+
+    pub fn update_error(err: &str) -> String {
+        if is_chinese() {
+            format!("更新失败: {}", err)
+        } else {
+            format!("Update failed: {}", err)
+        }
+    }
 }

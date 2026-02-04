@@ -39,8 +39,8 @@ pub use mcp::{
 };
 pub use provider::{Provider, ProviderMeta};
 pub use services::{
-    ConfigService, EndpointLatency, McpService, PromptService, ProviderService, SkillService,
-    SpeedtestService,
+    ApplyResult, ConfigService, EndpointLatency, McpService, PromptService, ProviderService,
+    ReleaseAsset, ReleaseInfo, SkillService, SpeedtestService, UpdateService,
 };
 pub use settings::{update_settings, AppSettings};
 pub use store::AppState;

@@ -68,6 +68,10 @@ zip = "2.2"
 url = "2.5"
 edit = "0.1"
 unicode-width = "0.1"
+semver = "1.0"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 winreg = "0.52"

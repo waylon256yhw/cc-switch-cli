@@ -60,6 +60,9 @@ pub enum Commands {
     #[command(subcommand)]
     Env(commands::env::EnvCommand),
 
+    /// Check for updates and install latest version
+    Update(commands::update::UpdateCommand),
+
     /// Enter interactive mode
     #[command(alias = "ui")]
     Interactive,
