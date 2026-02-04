@@ -207,6 +207,11 @@ impl UpdateService {
         let output_name = if cfg!(windows) { "cc-switch-new.exe" } else { "cc-switch-new" };
         let output_path = archive_path.with_file_name(output_name);
 
+        // Clean up any leftover from previous failed update
+        if output_path.exists() {
+            fs::remove_file(&output_path).ok();
+        }
+
         let gz = GzDecoder::new(file);
         let mut archive = Archive::new(gz);
 
