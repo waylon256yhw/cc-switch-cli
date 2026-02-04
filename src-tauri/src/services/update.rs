@@ -6,7 +6,11 @@ use std::time::Duration;
 
 use crate::error::AppError;
 
-const GITHUB_API_URL: &str = "https://api.github.com/repos/saladday/cc-switch-cli/releases/latest";
+/// GitHub repository owner for update checks (e.g., "SaladDay")
+const GITHUB_REPO_OWNER: &str = "SaladDay";
+/// GitHub repository name for update checks
+const GITHUB_REPO_NAME: &str = "cc-switch-cli";
+
 const USER_AGENT: &str = "cc-switch-updater/1.0";
 const REQUEST_TIMEOUT_SECS: u64 = 30;
 
@@ -44,11 +48,18 @@ impl UpdateService {
         env!("CARGO_PKG_VERSION")
     }
 
+    fn github_api_url() -> String {
+        format!(
+            "https://api.github.com/repos/{}/{}/releases/latest",
+            GITHUB_REPO_OWNER, GITHUB_REPO_NAME
+        )
+    }
+
     pub async fn check_latest() -> Result<ReleaseInfo, AppError> {
         let client = Self::build_client()?;
 
         let response = client
-            .get(GITHUB_API_URL)
+            .get(Self::github_api_url())
             .send()
             .await
             .map_err(|e| AppError::Message(format!("Failed to fetch release info: {}", e)))?;
