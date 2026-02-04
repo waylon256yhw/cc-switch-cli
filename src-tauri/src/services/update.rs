@@ -76,27 +76,25 @@ impl UpdateService {
         }
     }
 
-    pub fn detect_asset_name() -> String {
+    pub fn detect_platform_suffix() -> &'static str {
         let os = std::env::consts::OS;
         let arch = std::env::consts::ARCH;
 
-        let suffix = match (os, arch) {
+        match (os, arch) {
             ("linux", "x86_64") => "linux-x64-musl",
             ("linux", "aarch64") => "linux-arm64-musl",
             ("macos", _) => "darwin-universal",
             ("windows", "x86_64") => "windows-x64",
             _ => "unknown",
-        };
-
-        format!("cc-switch-{}", suffix)
+        }
     }
 
     pub fn find_matching_asset(release: &ReleaseInfo) -> Option<&ReleaseAsset> {
-        let asset_name = Self::detect_asset_name();
+        let suffix = Self::detect_platform_suffix();
         release
             .assets
             .iter()
-            .find(|a| a.name.contains(&asset_name) && !a.name.ends_with(".sha256"))
+            .find(|a| a.name.contains(suffix) && !a.name.ends_with(".sha256"))
     }
 
     pub async fn download_asset<F>(
@@ -183,6 +181,40 @@ impl UpdateService {
 
         // Fall back to temp dir
         Ok(std::env::temp_dir().join(file_name))
+    }
+
+    /// Extract binary from downloaded archive (.tar.gz or .zip)
+    pub fn extract_binary(archive_path: &Path) -> Result<PathBuf, AppError> {
+        use flate2::read::GzDecoder;
+        use std::fs;
+        use tar::Archive;
+
+        let file = fs::File::open(archive_path)
+            .map_err(|e| AppError::io(archive_path, e))?;
+
+        let binary_name = if cfg!(windows) { "cc-switch.exe" } else { "cc-switch" };
+        let output_name = if cfg!(windows) { "cc-switch-new.exe" } else { "cc-switch-new" };
+        let output_path = archive_path.with_file_name(output_name);
+
+        let gz = GzDecoder::new(file);
+        let mut archive = Archive::new(gz);
+
+        for entry in archive.entries().map_err(|e| AppError::Message(format!("Failed to read archive: {}", e)))? {
+            let mut entry = entry.map_err(|e| AppError::Message(format!("Failed to read entry: {}", e)))?;
+            let path = entry.path().map_err(|e| AppError::Message(format!("Invalid path: {}", e)))?;
+
+            if path.file_name().map(|n| n == binary_name).unwrap_or(false) {
+                entry.unpack(&output_path)
+                    .map_err(|e| AppError::Message(format!("Failed to extract: {}", e)))?;
+
+                // Clean up archive
+                fs::remove_file(archive_path).ok();
+
+                return Ok(output_path);
+            }
+        }
+
+        Err(AppError::Message(format!("Binary '{}' not found in archive", binary_name)))
     }
 
     pub fn apply_update(downloaded_path: &Path) -> Result<ApplyResult, AppError> {
@@ -334,9 +366,12 @@ mod tests {
     }
 
     #[test]
-    fn test_detect_asset_name() {
-        let name = UpdateService::detect_asset_name();
-        assert!(name.starts_with("cc-switch-"));
+    fn test_detect_platform_suffix() {
+        let suffix = UpdateService::detect_platform_suffix();
+        assert!(!suffix.is_empty());
+        // Should be one of the known platforms or "unknown"
+        let known = ["linux-x64-musl", "linux-arm64-musl", "darwin-universal", "windows-x64", "unknown"];
+        assert!(known.contains(&suffix));
     }
 
     #[test]

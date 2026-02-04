@@ -137,9 +137,12 @@ fn check_for_updates_interactive() -> Result<(), AppError> {
 
     pb.finish_with_message(texts::update_download_complete().to_string());
 
+    println!("{}", info(texts::update_extracting()));
+    let binary_path = UpdateService::extract_binary(&downloaded_path)?;
+
     println!("{}", info(texts::update_applying()));
 
-    match UpdateService::apply_update(&downloaded_path)? {
+    match UpdateService::apply_update(&binary_path)? {
         ApplyResult::Applied { requires_restart } => {
             if requires_restart {
                 println!("\n{}", success(texts::update_success_restart()));

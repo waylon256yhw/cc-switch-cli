@@ -1438,7 +1438,7 @@ fn update_worker_loop(rx: mpsc::Receiver<UpdateReq>, tx: mpsc::Sender<UpdateMsg>
                 let last_percent = std::sync::atomic::AtomicU8::new(0);
 
                 let result = rt.block_on(async {
-                    let path = UpdateService::download_asset(&asset, |progress| {
+                    let archive_path = UpdateService::download_asset(&asset, |progress| {
                         let percent = (progress.round() as u8).min(100);
                         let prev = last_percent.swap(percent, std::sync::atomic::Ordering::Relaxed);
                         if percent != prev {
@@ -1446,7 +1446,8 @@ fn update_worker_loop(rx: mpsc::Receiver<UpdateReq>, tx: mpsc::Sender<UpdateMsg>
                         }
                     })
                     .await?;
-                    UpdateService::apply_update(&path)
+                    let binary_path = UpdateService::extract_binary(&archive_path)?;
+                    UpdateService::apply_update(&binary_path)
                 });
 
                 let _ = tx.send(UpdateMsg::DownloadFinished {

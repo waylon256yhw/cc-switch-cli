@@ -5399,6 +5399,14 @@ pub mod texts {
         }
     }
 
+    pub fn update_extracting() -> &'static str {
+        if is_chinese() {
+            "正在解压..."
+        } else {
+            "Extracting..."
+        }
+    }
+
     pub fn update_applying() -> &'static str {
         if is_chinese() {
             "正在应用更新..."
