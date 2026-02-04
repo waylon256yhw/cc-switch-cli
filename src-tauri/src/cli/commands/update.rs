@@ -58,7 +58,7 @@ async fn execute_async(cmd: UpdateCommand) -> Result<(), AppError> {
     }
 
     if !is_newer && !cmd.force {
-        println!("{}", success(texts::update_already_latest(current)));
+        println!("{}", success(&texts::update_already_latest(current)));
         return Ok(());
     }
 

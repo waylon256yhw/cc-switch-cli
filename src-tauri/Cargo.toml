@@ -57,7 +57,7 @@ base64 = "0.22"
 indexmap = { version = "2", features = ["serde"] }
 
 # Network and async
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
 futures = "0.3"
 
