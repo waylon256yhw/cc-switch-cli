@@ -132,7 +132,7 @@ cc-switch provider speedtest <id>    # Test API latency
 
 #### PackyCode preset (Sponsor)
 
-In the TUI "Add Provider" form, choose the `PackyCode` template to prefill endpoints:
+In the TUI "Add Provider" form, choose the `★ PackyCode` template to prefill endpoints:
 
 - Website: `https://www.packyapi.com`
 - Register: `https://www.packyapi.com/register?aff=cc-switch-cli`

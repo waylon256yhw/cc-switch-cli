@@ -135,7 +135,7 @@ cc-switch provider speedtest <id>    # 测试 API 延迟
 
 #### PackyCode 预设（赞助商）
 
-在新版 TUI 的「添加供应商」表单中，可选择 `PackyCode` 模板自动填充端点：
+在新版 TUI 的「添加供应商」表单中，可选择 `★ PackyCode` 模板自动填充端点：
 
 - 官网：`https://www.packyapi.com`
 - 注册链接：`https://www.packyapi.com/register?aff=cc-switch-cli`
