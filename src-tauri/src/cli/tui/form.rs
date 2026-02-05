@@ -149,6 +149,89 @@ pub enum ProviderAddField {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ProviderTemplateId {
+    Custom,
+    ClaudeOfficial,
+    OpenAiOfficial,
+    GoogleOAuth,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ProviderTemplateDef {
+    id: ProviderTemplateId,
+    label: &'static str,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct SponsorProviderPreset {
+    id: &'static str,
+    label: &'static str,
+    website_url: &'static str,
+    register_url: &'static str,
+    promo_code: &'static str,
+    partner_promotion_key: &'static str,
+    claude_base_url: &'static str,
+    codex_base_url: &'static str,
+    gemini_base_url: &'static str,
+}
+
+// Add new sponsor presets here.
+// They will automatically show up as extra templates in the TUI "Add Provider" form
+// for Claude/Codex/Gemini (appended after the built-in templates).
+const SPONSOR_PROVIDER_PRESETS: [SponsorProviderPreset; 1] = [SponsorProviderPreset {
+    id: "packycode",
+    label: "PackyCode",
+    website_url: "https://www.packyapi.com",
+    register_url: "https://www.packyapi.com/register?aff=cc-switch-cli",
+    promo_code: "cc-switch-cli",
+    partner_promotion_key: "packycode",
+    claude_base_url: "https://www.packyapi.com",
+    codex_base_url: "https://www.packyapi.com/v1",
+    gemini_base_url: "https://www.packyapi.com",
+}];
+
+const PROVIDER_TEMPLATE_DEFS_CLAUDE: [ProviderTemplateDef; 2] = [
+    ProviderTemplateDef {
+        id: ProviderTemplateId::Custom,
+        label: "Custom",
+    },
+    ProviderTemplateDef {
+        id: ProviderTemplateId::ClaudeOfficial,
+        label: "Claude Official",
+    },
+];
+
+const PROVIDER_TEMPLATE_DEFS_CODEX: [ProviderTemplateDef; 2] = [
+    ProviderTemplateDef {
+        id: ProviderTemplateId::Custom,
+        label: "Custom",
+    },
+    ProviderTemplateDef {
+        id: ProviderTemplateId::OpenAiOfficial,
+        label: "OpenAI Official",
+    },
+];
+
+const PROVIDER_TEMPLATE_DEFS_GEMINI: [ProviderTemplateDef; 2] = [
+    ProviderTemplateDef {
+        id: ProviderTemplateId::Custom,
+        label: "Custom",
+    },
+    ProviderTemplateDef {
+        id: ProviderTemplateId::GoogleOAuth,
+        label: "Google OAuth",
+    },
+];
+
+fn provider_builtin_template_defs(app_type: &AppType) -> &'static [ProviderTemplateDef] {
+    match app_type {
+        AppType::Claude => &PROVIDER_TEMPLATE_DEFS_CLAUDE,
+        AppType::Codex => &PROVIDER_TEMPLATE_DEFS_CODEX,
+        AppType::Gemini => &PROVIDER_TEMPLATE_DEFS_GEMINI,
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum McpAddField {
     Id,
     Name,
@@ -355,19 +438,16 @@ impl ProviderAddFormState {
     }
 
     pub fn template_count(&self) -> usize {
-        match self.app_type {
-            AppType::Claude => PROVIDER_TEMPLATES_CLAUDE.len(),
-            AppType::Codex => PROVIDER_TEMPLATES_CODEX.len(),
-            AppType::Gemini => PROVIDER_TEMPLATES_GEMINI.len(),
-        }
+        provider_builtin_template_defs(&self.app_type).len() + SPONSOR_PROVIDER_PRESETS.len()
     }
 
     pub fn template_labels(&self) -> Vec<&'static str> {
-        match self.app_type {
-            AppType::Claude => PROVIDER_TEMPLATES_CLAUDE.to_vec(),
-            AppType::Codex => PROVIDER_TEMPLATES_CODEX.to_vec(),
-            AppType::Gemini => PROVIDER_TEMPLATES_GEMINI.to_vec(),
-        }
+        let mut labels = provider_builtin_template_defs(&self.app_type)
+            .iter()
+            .map(|def| def.label)
+            .collect::<Vec<_>>();
+        labels.extend(SPONSOR_PROVIDER_PRESETS.iter().map(|preset| preset.label));
+        labels
     }
 
     pub fn fields(&self) -> Vec<ProviderAddField> {
@@ -452,47 +532,59 @@ impl ProviderAddFormState {
     }
 
     pub fn apply_template(&mut self, idx: usize, existing_ids: &[String]) {
-        let idx = idx.min(self.template_count().saturating_sub(1));
+        let builtin_defs = provider_builtin_template_defs(&self.app_type);
+        let total_templates = builtin_defs.len() + SPONSOR_PROVIDER_PRESETS.len();
+        let idx = idx.min(total_templates.saturating_sub(1));
         self.template_idx = idx;
         self.id_is_manual = false;
 
-        let template = idx;
-        if template == 0 {
-            if matches!(self.mode, FormMode::Add) {
-                let defaults = Self::new(self.app_type.clone());
-                self.extra = defaults.extra;
-                self.id = defaults.id;
-                self.id_is_manual = defaults.id_is_manual;
-                self.name = defaults.name;
-                self.website_url = defaults.website_url;
-                self.notes = defaults.notes;
-                self.json_scroll = defaults.json_scroll;
-                self.claude_api_key = defaults.claude_api_key;
-                self.claude_base_url = defaults.claude_base_url;
-                self.codex_base_url = defaults.codex_base_url;
-                self.codex_model = defaults.codex_model;
-                self.codex_wire_api = defaults.codex_wire_api;
-                self.codex_requires_openai_auth = defaults.codex_requires_openai_auth;
-                self.codex_env_key = defaults.codex_env_key;
-                self.codex_api_key = defaults.codex_api_key;
-                self.gemini_auth_type = defaults.gemini_auth_type;
-                self.gemini_api_key = defaults.gemini_api_key;
-                self.gemini_base_url = defaults.gemini_base_url;
-                self.gemini_model = defaults.gemini_model;
+        if idx >= builtin_defs.len() {
+            let sponsor_idx = idx.saturating_sub(builtin_defs.len());
+            if let Some(preset) = SPONSOR_PROVIDER_PRESETS.get(sponsor_idx) {
+                self.apply_sponsor_preset(preset);
             }
-            return;
-        }
-        match self.app_type {
-            AppType::Claude => match template {
-                1 => {
+        } else {
+            let template_id = builtin_defs
+                .get(idx)
+                .map(|def| def.id)
+                .unwrap_or(ProviderTemplateId::Custom);
+
+            if template_id == ProviderTemplateId::Custom {
+                if matches!(self.mode, FormMode::Add) {
+                    let defaults = Self::new(self.app_type.clone());
+                    self.extra = defaults.extra;
+                    self.id = defaults.id;
+                    self.id_is_manual = defaults.id_is_manual;
+                    self.name = defaults.name;
+                    self.website_url = defaults.website_url;
+                    self.notes = defaults.notes;
+                    self.json_scroll = defaults.json_scroll;
+                    self.claude_api_key = defaults.claude_api_key;
+                    self.claude_base_url = defaults.claude_base_url;
+                    self.codex_base_url = defaults.codex_base_url;
+                    self.codex_model = defaults.codex_model;
+                    self.codex_wire_api = defaults.codex_wire_api;
+                    self.codex_requires_openai_auth = defaults.codex_requires_openai_auth;
+                    self.codex_env_key = defaults.codex_env_key;
+                    self.codex_api_key = defaults.codex_api_key;
+                    self.gemini_auth_type = defaults.gemini_auth_type;
+                    self.gemini_api_key = defaults.gemini_api_key;
+                    self.gemini_base_url = defaults.gemini_base_url;
+                    self.gemini_model = defaults.gemini_model;
+                }
+                return;
+            }
+
+            self.extra = json!({});
+            self.notes.set("");
+            match template_id {
+                ProviderTemplateId::Custom => {}
+                ProviderTemplateId::ClaudeOfficial => {
                     self.name.set("Claude Official");
                     self.website_url.set("https://anthropic.com");
                     self.claude_base_url.set("https://api.anthropic.com");
                 }
-                _ => {}
-            },
-            AppType::Codex => match template {
-                1 => {
+                ProviderTemplateId::OpenAiOfficial => {
                     self.name.set("OpenAI Official");
                     self.website_url.set("https://openai.com");
                     self.codex_base_url.set("https://api.openai.com/v1");
@@ -500,16 +592,12 @@ impl ProviderAddFormState {
                     self.codex_wire_api = CodexWireApi::Responses;
                     self.codex_requires_openai_auth = true;
                 }
-                _ => {}
-            },
-            AppType::Gemini => match template {
-                1 => {
+                ProviderTemplateId::GoogleOAuth => {
                     self.name.set("Google OAuth");
                     self.website_url.set("https://ai.google.dev");
                     self.gemini_auth_type = GeminiAuthType::OAuth;
                 }
-                _ => {}
-            },
+            };
         }
 
         if !self.id_is_manual && !self.name.is_blank() {
@@ -518,6 +606,41 @@ impl ProviderAddFormState {
                 existing_ids,
             );
             self.id.set(id);
+        }
+    }
+
+    fn apply_sponsor_preset(&mut self, preset: &SponsorProviderPreset) {
+        self.extra = json!({
+            "meta": {
+                "isPartner": true,
+                "partnerPromotionKey": preset.partner_promotion_key,
+            }
+        });
+        self.name.set(preset.label);
+        self.website_url.set(preset.website_url);
+        self.notes.set(format!(
+            "Sponsor: {label} — {website} — promo code {promo_code} (10% off). Register: {register_url}",
+            label = preset.label,
+            website = preset.website_url,
+            promo_code = preset.promo_code,
+            register_url = preset.register_url,
+        ));
+
+        match self.app_type {
+            AppType::Claude => {
+                self.claude_base_url.set(preset.claude_base_url);
+            }
+            AppType::Codex => {
+                self.codex_base_url.set(preset.codex_base_url);
+                self.codex_model.set("gpt-5.2-codex");
+                self.codex_wire_api = CodexWireApi::Responses;
+                self.codex_requires_openai_auth = false;
+                self.codex_env_key.set("OPENAI_API_KEY");
+            }
+            AppType::Gemini => {
+                self.gemini_auth_type = GeminiAuthType::ApiKey;
+                self.gemini_base_url.set(preset.gemini_base_url);
+            }
         }
     }
 
@@ -1023,14 +1146,78 @@ pub enum FormState {
     McpAdd(McpAddFormState),
 }
 
-const PROVIDER_TEMPLATES_CLAUDE: [&str; 2] = ["Custom", "Claude Official"];
-const PROVIDER_TEMPLATES_CODEX: [&str; 2] = ["Custom", "OpenAI Official"];
-const PROVIDER_TEMPLATES_GEMINI: [&str; 2] = ["Custom", "Google OAuth"];
 const MCP_TEMPLATES: [&str; 2] = ["Custom", "Filesystem (npx)"];
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn packycode_template_index(app_type: AppType) -> usize {
+        let builtin_len = provider_builtin_template_defs(&app_type).len();
+        let sponsor_idx = SPONSOR_PROVIDER_PRESETS
+            .iter()
+            .position(|preset| preset.id == "packycode")
+            .expect("PackyCode sponsor preset should exist");
+        builtin_len + sponsor_idx
+    }
+
+    #[test]
+    fn provider_add_form_packycode_template_claude_sets_partner_meta_and_base_url() {
+        let mut form = ProviderAddFormState::new(AppType::Claude);
+        let existing_ids = Vec::<String>::new();
+
+        let idx = packycode_template_index(AppType::Claude);
+        form.apply_template(idx, &existing_ids);
+
+        let provider = form.to_provider_json_value();
+        assert_eq!(provider["name"], "PackyCode");
+        assert_eq!(provider["websiteUrl"], "https://www.packyapi.com");
+        assert_eq!(
+            provider["settingsConfig"]["env"]["ANTHROPIC_BASE_URL"],
+            "https://www.packyapi.com"
+        );
+        assert_eq!(provider["meta"]["isPartner"], true);
+        assert_eq!(provider["meta"]["partnerPromotionKey"], "packycode");
+    }
+
+    #[test]
+    fn provider_add_form_packycode_template_codex_sets_partner_meta_and_base_url() {
+        let mut form = ProviderAddFormState::new(AppType::Codex);
+        let existing_ids = Vec::<String>::new();
+
+        let idx = packycode_template_index(AppType::Codex);
+        form.apply_template(idx, &existing_ids);
+
+        let provider = form.to_provider_json_value();
+        assert_eq!(provider["name"], "PackyCode");
+        assert_eq!(provider["websiteUrl"], "https://www.packyapi.com");
+        let cfg = provider["settingsConfig"]["config"]
+            .as_str()
+            .expect("settingsConfig.config should be string");
+        assert!(cfg.contains("base_url = \"https://www.packyapi.com/v1\""));
+        assert!(cfg.contains("requires_openai_auth = false"));
+        assert_eq!(provider["meta"]["isPartner"], true);
+        assert_eq!(provider["meta"]["partnerPromotionKey"], "packycode");
+    }
+
+    #[test]
+    fn provider_add_form_packycode_template_gemini_sets_partner_meta_and_base_url() {
+        let mut form = ProviderAddFormState::new(AppType::Gemini);
+        let existing_ids = Vec::<String>::new();
+
+        let idx = packycode_template_index(AppType::Gemini);
+        form.apply_template(idx, &existing_ids);
+
+        let provider = form.to_provider_json_value();
+        assert_eq!(provider["name"], "PackyCode");
+        assert_eq!(provider["websiteUrl"], "https://www.packyapi.com");
+        assert_eq!(
+            provider["settingsConfig"]["env"]["GOOGLE_GEMINI_BASE_URL"],
+            "https://www.packyapi.com"
+        );
+        assert_eq!(provider["meta"]["isPartner"], true);
+        assert_eq!(provider["meta"]["partnerPromotionKey"], "packycode");
+    }
 
     #[test]
     fn provider_add_form_claude_builds_env_settings() {
