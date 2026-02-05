@@ -2005,28 +2005,53 @@ impl ProviderService {
             })?
         };
 
-        // 提取必要字段
-        let base_url = stored_config
-            .get("base_url")
+        // 兼容：部分旧版本/外部导入可能把“整份 config.toml”写进 provider.config。
+        // 对于这种情况，base_url / wire_api / requires_openai_auth / env_key 等应从
+        // model_provider + model_providers.<id> 中提取，而不是只看根级字段。
+        let model_provider_in_config = stored_config
+            .get("model_provider")
             .and_then(|v| v.as_str())
+            .map(str::to_string);
+        let provider_table_from_full_config = stored_config
+            .get("model_providers")
+            .and_then(|v| v.as_table())
+            .and_then(|providers| {
+                model_provider_in_config
+                    .as_deref()
+                    .and_then(|id| providers.get(id))
+            })
+            .and_then(|v| v.as_table());
+
+        // 提取必要字段
+        let base_url = provider_table_from_full_config
+            .and_then(|t| t.get("base_url"))
+            .and_then(|v| v.as_str())
+            .or_else(|| stored_config.get("base_url").and_then(|v| v.as_str()))
             .unwrap_or("");
         let model = stored_config
             .get("model")
             .and_then(|v| v.as_str())
             .unwrap_or("gpt-5.2-codex");
-        let wire_api = stored_config
-            .get("wire_api")
+        let wire_api = provider_table_from_full_config
+            .and_then(|t| t.get("wire_api"))
             .and_then(|v| v.as_str())
+            .or_else(|| stored_config.get("wire_api").and_then(|v| v.as_str()))
             .unwrap_or("chat"); // 默认 'chat'
-        let env_key = stored_config
-            .get("env_key")
+        let env_key = provider_table_from_full_config
+            .and_then(|t| t.get("env_key"))
             .and_then(|v| v.as_str())
+            .or_else(|| stored_config.get("env_key").and_then(|v| v.as_str()))
             .map(str::trim)
             .filter(|s| !s.is_empty());
         let inferred_requires_openai_auth = env_key == Some("OPENAI_API_KEY") && !auth_is_empty;
-        let requires_openai_auth = stored_config
-            .get("requires_openai_auth")
+        let requires_openai_auth = provider_table_from_full_config
+            .and_then(|t| t.get("requires_openai_auth"))
             .and_then(|v| v.as_bool())
+            .or_else(|| {
+                stored_config
+                    .get("requires_openai_auth")
+                    .and_then(|v| v.as_bool())
+            })
             .unwrap_or(inferred_requires_openai_auth);
 
         // 从供应商名称生成 provider ID
@@ -2074,7 +2099,14 @@ impl ProviderService {
         for (key, val) in stored_config.iter() {
             match key.as_str() {
                 // 跳过已处理的字段和应该在 provider section 的字段
-                "base_url" | "wire_api" | "env_key" | "requires_openai_auth" | "name" => continue,
+                "base_url"
+                | "wire_api"
+                | "env_key"
+                | "requires_openai_auth"
+                | "name"
+                | "model_provider"
+                | "model_providers"
+                | "mcp_servers" => continue,
                 "model" => continue, // 已在上面设置
                 // 复制其他根级别字段（如 model_reasoning_effort, network_access 等）
                 _ => {

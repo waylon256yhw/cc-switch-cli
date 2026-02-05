@@ -148,6 +148,89 @@ command = "say"
 }
 
 #[test]
+fn switch_provider_codex_accepts_full_config_toml_and_preserves_base_url() {
+    let _guard = test_mutex().lock().expect("acquire test mutex");
+    reset_test_fs();
+    ensure_test_home();
+
+    // Mark Codex as initialized so live sync is enabled.
+    let config_path = get_codex_config_path();
+    if let Some(parent) = config_path.parent() {
+        std::fs::create_dir_all(parent).expect("create codex dir");
+    }
+
+    let full_config = r#"model_provider = "azure"
+model = "gpt-5.1-codex"
+disable_response_storage = true
+
+[model_providers.azure]
+name = "azure"
+base_url = "https://old.example/v1"
+wire_api = "responses"
+requires_openai_auth = true
+"#;
+
+    let mut config = MultiAppConfig::default();
+    {
+        let manager = config
+            .get_manager_mut(&AppType::Codex)
+            .expect("codex manager");
+        manager.current = "p1".to_string();
+        manager.providers.insert(
+            "p1".to_string(),
+            Provider::with_id(
+                "p1".to_string(),
+                "Duck Coding".to_string(),
+                json!({
+                    "auth": {"OPENAI_API_KEY": "sk-test"},
+                    "config": full_config
+                }),
+                None,
+            ),
+        );
+    }
+
+    let state = AppState {
+        config: RwLock::new(config),
+    };
+
+    ProviderService::switch(&state, AppType::Codex, "p1").expect("switch should succeed");
+
+    let live_text = std::fs::read_to_string(get_codex_config_path()).expect("read config.toml");
+    let live_value: toml::Value = toml::from_str(&live_text).expect("parse live config.toml");
+
+    assert_eq!(
+        live_value.get("model_provider").and_then(|v| v.as_str()),
+        Some("duckcoding"),
+        "model_provider should be normalized from provider name"
+    );
+
+    let providers = live_value
+        .get("model_providers")
+        .and_then(|v| v.as_table())
+        .expect("model_providers should exist");
+    let duck = providers
+        .get("duckcoding")
+        .and_then(|v| v.as_table())
+        .expect("duckcoding provider table should exist");
+    assert_eq!(
+        duck.get("base_url").and_then(|v| v.as_str()),
+        Some("https://old.example/v1"),
+        "base_url should be carried over from stored config"
+    );
+    assert_eq!(
+        duck.get("wire_api").and_then(|v| v.as_str()),
+        Some("responses"),
+        "wire_api should be carried over from stored config"
+    );
+    assert_eq!(
+        duck.get("requires_openai_auth").and_then(|v| v.as_bool()),
+        Some(true),
+        "requires_openai_auth should be carried over from stored config"
+    );
+}
+
+#[test]
 fn switch_provider_missing_provider_returns_error() {
     let _guard = test_mutex().lock().expect("acquire test mutex");
     reset_test_fs();
