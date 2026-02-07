@@ -450,7 +450,7 @@ fn nav_pane_width(theme: &super::theme::Theme) -> u16 {
 fn render_nav(frame: &mut Frame<'_>, app: &App, area: Rect, theme: &super::theme::Theme) {
     let rows = NavItem::ALL.iter().map(|item| {
         let (icon, text) = split_nav_label(nav_label(*item));
-        Row::new(vec![Cell::from(icon), Cell::from(text)])
+        Row::new(vec![Cell::from(pad1(icon)), Cell::from(text)])
     });
 
     let table = Table::new(rows, [Constraint::Length(3), Constraint::Min(10)])
@@ -4221,6 +4221,46 @@ mod tests {
 
         // Header is at y=0..=2, and should have an outer border at (0,0).
         assert_eq!(buf[(0, 0)].symbol(), "┌");
+    }
+
+    #[test]
+    fn nav_icons_have_left_padding_from_border() {
+        let _lock = lock_env();
+        let _no_color = EnvGuard::remove("NO_COLOR");
+
+        let app = App::new(Some(AppType::Claude));
+        let data = minimal_data(&app.app_type);
+        let buf = render(&app, &data);
+
+        let mut home_line = None;
+        for y in 0..buf.area.height {
+            let line = line_at(&buf, y);
+            if line.contains("Home") && line.contains("🏠") {
+                home_line = Some(line);
+                break;
+            }
+        }
+
+        let home_line = home_line.expect("Home row missing from nav");
+        let emoji_idx = home_line
+            .find("🏠")
+            .expect("Home emoji missing from nav row");
+        let emoji_char_idx = home_line[..emoji_idx].chars().count();
+        let chars: Vec<char> = home_line.chars().collect();
+        assert!(
+            emoji_char_idx >= 2,
+            "expected at least 2 chars before emoji, got line: {home_line}"
+        );
+        assert_eq!(
+            chars[emoji_char_idx.saturating_sub(2)],
+            '│',
+            "expected nav border immediately before padding space, got line: {home_line}"
+        );
+        assert_eq!(
+            chars[emoji_char_idx.saturating_sub(1)],
+            ' ',
+            "expected a 1-cell padding between nav border and emoji, got line: {home_line}"
+        );
     }
 
     #[test]
