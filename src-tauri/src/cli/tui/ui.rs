@@ -13,13 +13,14 @@ use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 use crate::app_config::AppType;
 use crate::cli::i18n::texts;
+use serde_json::Value;
 
 use super::{
-    app::{
-        App, ConfigItem, ConfirmAction, Focus, LoadingKind, Overlay, ToastKind, WebDavConfigItem,
-    },
+    app::{App, ConfigItem, ConfirmAction, Focus, LoadingKind, Overlay, ToastKind, WebDavConfigItem},
     data::{McpRow, ProviderRow, UiData},
-    form::{FormFocus, FormState, GeminiAuthType, McpAddField, ProviderAddField},
+    form::{
+        CodexPreviewSection, FormFocus, FormState, GeminiAuthType, McpAddField, ProviderAddField,
+    },
     route::{NavItem, Route},
     theme::theme_for,
 };
@@ -64,8 +65,8 @@ fn active_chip_style(theme: &super::theme::Theme) -> Style {
     }
 }
 
-fn pad2(s: &str) -> String {
-    format!("  {s}")
+fn pad1(s: &str) -> String {
+    format!(" {s}")
 }
 
 fn dracula_comment(theme: &super::theme::Theme) -> Style {
@@ -163,9 +164,11 @@ fn highlight_symbol(theme: &super::theme::Theme) -> &'static str {
     if theme.no_color {
         texts::tui_highlight_symbol()
     } else {
-        " "
+        ""
     }
 }
+
+const CONTENT_INSET_LEFT: u16 = 1;
 
 fn key_bar_line(theme: &super::theme::Theme, items: &[(&str, &str)]) -> Line<'static> {
     if theme.no_color {
@@ -258,7 +261,10 @@ pub fn render(frame: &mut Frame<'_>, app: &App, data: &UiData) {
 
     let body = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(30), Constraint::Min(0)])
+        .constraints([
+            Constraint::Length(nav_pane_width(&theme)),
+            Constraint::Min(0),
+        ])
         .split(root[1]);
 
     render_nav(frame, app, body[0], &theme);
@@ -378,6 +384,14 @@ fn render_header(
     );
 }
 
+fn split_nav_label(label: &str) -> (&str, &str) {
+    if let Some((icon, rest)) = label.split_once(' ') {
+        (icon, rest)
+    } else {
+        ("", label)
+    }
+}
+
 fn nav_label(item: NavItem) -> &'static str {
     match item {
         NavItem::Main => texts::menu_home(),
@@ -391,21 +405,56 @@ fn nav_label(item: NavItem) -> &'static str {
     }
 }
 
-fn render_nav(frame: &mut Frame<'_>, app: &App, area: Rect, theme: &super::theme::Theme) {
-    fn split_nav_label(label: &'static str) -> (&'static str, &'static str) {
-        if let Some((icon, rest)) = label.split_once(' ') {
-            (icon, rest)
-        } else {
-            ("", label)
-        }
+fn nav_label_variants(item: NavItem) -> (&'static str, &'static str) {
+    match item {
+        NavItem::Main => texts::menu_home_variants(),
+        NavItem::Providers => texts::menu_manage_providers_variants(),
+        NavItem::Mcp => texts::menu_manage_mcp_variants(),
+        NavItem::Prompts => texts::menu_manage_prompts_variants(),
+        NavItem::Config => texts::menu_manage_config_variants(),
+        NavItem::Skills => texts::menu_manage_skills_variants(),
+        NavItem::Settings => texts::menu_settings_variants(),
+        NavItem::Exit => texts::menu_exit_variants(),
     }
+}
 
+fn nav_pane_width(theme: &super::theme::Theme) -> u16 {
+    const NAV_BORDER_WIDTH: u16 = 2;
+    const NAV_ICON_COL_WIDTH: u16 = 3;
+    const NAV_TEXT_MIN_WIDTH: u16 = 10;
+    const NAV_TEXT_EXTRA_WIDTH: u16 = 5;
+    let highlight_width = UnicodeWidthStr::width(highlight_symbol(theme)) as u16;
+
+    let max_text_width = NavItem::ALL
+        .iter()
+        .flat_map(|item| {
+            let (en, zh) = nav_label_variants(*item);
+            [en, zh]
+        })
+        .map(|label| {
+            let (_icon, text) = split_nav_label(label);
+            UnicodeWidthStr::width(text) as u16
+        })
+        .max()
+        .unwrap_or(NAV_TEXT_MIN_WIDTH);
+
+    let text_col_width = max_text_width
+        .saturating_add(NAV_TEXT_EXTRA_WIDTH)
+        .max(NAV_TEXT_MIN_WIDTH);
+
+    NAV_BORDER_WIDTH
+        .saturating_add(highlight_width)
+        .saturating_add(NAV_ICON_COL_WIDTH)
+        .saturating_add(text_col_width)
+}
+fn render_nav(frame: &mut Frame<'_>, app: &App, area: Rect, theme: &super::theme::Theme) {
     let rows = NavItem::ALL.iter().map(|item| {
         let (icon, text) = split_nav_label(nav_label(*item));
-        Row::new(vec![Cell::from(icon), Cell::from(text)])
+        Row::new(vec![Cell::from(pad1(icon)), Cell::from(text)])
     });
 
     let table = Table::new(rows, [Constraint::Length(3), Constraint::Min(10)])
+        .column_spacing(0)
         .block(
             Block::default()
                 .borders(Borders::ALL)
@@ -633,7 +682,7 @@ fn render_skills_installed(
 
     let mut state = TableState::default();
     state.select(Some(app.skills_idx));
-    frame.render_stateful_widget(table, inset_left(chunks[2], 2), &mut state);
+    frame.render_stateful_widget(table, inset_left(chunks[2], CONTENT_INSET_LEFT), &mut state);
 }
 
 fn render_skills_discover(
@@ -698,7 +747,7 @@ fn render_skills_discover(
             Paragraph::new(texts::tui_skills_discover_hint())
                 .style(Style::default().fg(theme.dim))
                 .wrap(Wrap { trim: false }),
-            inset_left(chunks[1], 2),
+            inset_left(chunks[1], CONTENT_INSET_LEFT),
         );
         return;
     }
@@ -741,7 +790,7 @@ fn render_skills_discover(
 
     let mut state = TableState::default();
     state.select(Some(app.skills_discover_idx));
-    frame.render_stateful_widget(table, inset_left(chunks[1], 2), &mut state);
+    frame.render_stateful_widget(table, inset_left(chunks[1], CONTENT_INSET_LEFT), &mut state);
 }
 
 fn render_skills_repos(
@@ -785,7 +834,7 @@ fn render_skills_repos(
         Paragraph::new(texts::tui_skills_repos_hint())
             .style(Style::default().fg(theme.dim))
             .wrap(Wrap { trim: false }),
-        inset_left(chunks[1], 1),
+        inset_left(chunks[1], CONTENT_INSET_LEFT),
     );
 
     let query = app.filter.query_lower();
@@ -808,7 +857,7 @@ fn render_skills_repos(
             Paragraph::new(texts::tui_skills_repos_empty())
                 .style(Style::default().fg(theme.dim))
                 .wrap(Wrap { trim: false }),
-            inset_left(chunks[2], 2),
+            inset_left(chunks[2], CONTENT_INSET_LEFT),
         );
         return;
     }
@@ -845,7 +894,7 @@ fn render_skills_repos(
 
     let mut state = TableState::default();
     state.select(Some(app.skills_repo_idx));
-    frame.render_stateful_widget(table, inset_left(chunks[2], 2), &mut state);
+    frame.render_stateful_widget(table, inset_left(chunks[2], CONTENT_INSET_LEFT), &mut state);
 }
 
 fn render_skills_unmanaged(
@@ -889,7 +938,7 @@ fn render_skills_unmanaged(
         Paragraph::new(texts::tui_skills_unmanaged_hint())
             .style(Style::default().fg(theme.dim))
             .wrap(Wrap { trim: false }),
-        inset_left(chunks[1], 1),
+        inset_left(chunks[1], CONTENT_INSET_LEFT),
     );
 
     let query = app.filter.query_lower();
@@ -917,7 +966,7 @@ fn render_skills_unmanaged(
             Paragraph::new(texts::tui_skills_unmanaged_empty())
                 .style(Style::default().fg(theme.dim))
                 .wrap(Wrap { trim: false }),
-            inset_left(chunks[2], 2),
+            inset_left(chunks[2], CONTENT_INSET_LEFT),
         );
         return;
     }
@@ -962,7 +1011,7 @@ fn render_skills_unmanaged(
 
     let mut state = TableState::default();
     state.select(Some(app.skills_unmanaged_idx));
-    frame.render_stateful_widget(table, inset_left(chunks[2], 2), &mut state);
+    frame.render_stateful_widget(table, inset_left(chunks[2], CONTENT_INSET_LEFT), &mut state);
 }
 
 fn render_skill_detail(
@@ -1085,7 +1134,7 @@ fn render_skill_detail(
 
     frame.render_widget(
         Paragraph::new(lines).wrap(Wrap { trim: false }),
-        inset_left(chunks[1], 2),
+        inset_left(chunks[1], CONTENT_INSET_LEFT),
     );
 }
 
@@ -1170,7 +1219,11 @@ fn focus_block_style(active: bool, theme: &super::theme::Theme) -> Style {
     }
 }
 
-fn add_form_key_items(focus: FormFocus, editing: bool) -> Vec<(&'static str, &'static str)> {
+fn add_form_key_items(
+    focus: FormFocus,
+    editing: bool,
+    _codex_split_preview: bool,
+) -> Vec<(&'static str, &'static str)> {
     let mut keys = vec![
         ("Tab", texts::tui_key_focus()),
         ("Ctrl+S", texts::tui_key_save()),
@@ -1196,10 +1249,12 @@ fn add_form_key_items(focus: FormFocus, editing: bool) -> Vec<(&'static str, &'s
                 ]);
             }
         }
-        FormFocus::JsonPreview => keys.extend([
-            ("Enter", texts::tui_key_edit_mode()),
-            ("↑↓", texts::tui_key_scroll()),
-        ]),
+        FormFocus::JsonPreview => {
+            keys.extend([
+                ("Enter", texts::tui_key_edit_mode()),
+                ("↑↓", texts::tui_key_scroll()),
+            ]);
+        }
     }
 
     keys
@@ -1311,6 +1366,42 @@ fn render_form_json_preview(
     );
 }
 
+fn render_form_text_preview(
+    frame: &mut Frame<'_>,
+    title: &str,
+    text: &str,
+    scroll: usize,
+    active: bool,
+    area: Rect,
+    theme: &super::theme::Theme,
+) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_type(BorderType::Plain)
+        .border_style(focus_block_style(active, theme))
+        .title(title);
+    frame.render_widget(block.clone(), area);
+    let inner = block.inner(area);
+
+    let lines = text
+        .lines()
+        .map(|s| Line::raw(s.to_string()))
+        .collect::<Vec<_>>();
+
+    let height = inner.height as usize;
+    if height == 0 {
+        return;
+    }
+    let max_start = lines.len().saturating_sub(height);
+    let start = scroll.min(max_start);
+    let end = (start + height).min(lines.len());
+
+    frame.render_widget(
+        Paragraph::new(lines[start..end].to_vec()).wrap(Wrap { trim: false }),
+        inner,
+    );
+}
+
 fn render_add_form(
     frame: &mut Frame<'_>,
     app: &App,
@@ -1367,7 +1458,11 @@ fn render_provider_add_form(
         frame,
         chunks[0],
         theme,
-        &add_form_key_items(provider.focus, provider.editing),
+        &add_form_key_items(
+            provider.focus,
+            provider.editing,
+            matches!(provider.app_type, AppType::Codex),
+        ),
     );
 
     if matches!(provider.mode, super::form::FormMode::Add) {
@@ -1400,34 +1495,90 @@ fn render_provider_add_form(
     frame.render_widget(fields_block.clone(), body[0]);
     let fields_inner = fields_block.inner(body[0]);
 
+    let show_codex_official_tip = provider.is_codex_official_provider();
+
     let fields_chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Min(0), Constraint::Length(3)])
+        .constraints(if show_codex_official_tip {
+            vec![
+                Constraint::Length(1),
+                Constraint::Min(0),
+                Constraint::Length(3),
+            ]
+        } else {
+            vec![Constraint::Min(0), Constraint::Length(3)]
+        })
         .split(fields_inner);
 
     let fields = provider.fields();
+    let rows_data = fields
+        .iter()
+        .map(|field| provider_field_label_and_value(provider, *field))
+        .collect::<Vec<_>>();
+
+    let label_col_width = field_label_column_width(
+        fields
+            .iter()
+            .zip(rows_data.iter())
+            .filter(|(field, _row)| !matches!(field, ProviderAddField::CommonConfigDivider))
+            .map(|(_field, (label, _value))| label.as_str())
+            .chain(std::iter::once(texts::tui_header_field())),
+        1,
+    );
+
     let header = Row::new(vec![
-        Cell::from(pad2(texts::tui_header_field())),
+        Cell::from(pad1(texts::tui_header_field())),
         Cell::from(texts::tui_header_value()),
     ])
     .style(Style::default().fg(theme.dim).add_modifier(Modifier::BOLD));
 
-    let rows = fields.iter().map(|field| {
-        let (label, value) = provider_field_label_and_value(provider, *field);
-        Row::new(vec![Cell::from(pad2(&label)), Cell::from(value)])
-    });
+    let rows = fields
+        .iter()
+        .zip(rows_data.iter())
+        .map(|(field, (label, value))| {
+            if matches!(field, ProviderAddField::CommonConfigDivider) {
+                let dashes_left = "┄".repeat(40);
+                let dashes_right = "┄".repeat(200);
+                Row::new(vec![
+                    Cell::from(pad1(&dashes_left)),
+                    Cell::from(dashes_right),
+                ])
+                .style(Style::default().fg(theme.dim))
+            } else {
+                Row::new(vec![Cell::from(pad1(label)), Cell::from(value.clone())])
+            }
+        });
 
-    let table = Table::new(rows, [Constraint::Length(22), Constraint::Min(10)])
-        .header(header)
-        .block(Block::default().borders(Borders::NONE))
-        .row_highlight_style(selection_style(theme))
-        .highlight_symbol(highlight_symbol(theme));
+    let table = Table::new(
+        rows,
+        [Constraint::Length(label_col_width), Constraint::Min(10)],
+    )
+    .header(header)
+    .block(Block::default().borders(Borders::NONE))
+    .row_highlight_style(selection_style(theme))
+    .highlight_symbol(highlight_symbol(theme));
 
     let mut state = TableState::default();
     if !fields.is_empty() {
         state.select(Some(provider.field_idx.min(fields.len() - 1)));
     }
-    frame.render_stateful_widget(table, fields_chunks[0], &mut state);
+    let (tip_area, table_area, editor_area) = if show_codex_official_tip {
+        (Some(fields_chunks[0]), fields_chunks[1], fields_chunks[2])
+    } else {
+        (None, fields_chunks[0], fields_chunks[1])
+    };
+
+    if let Some(area) = tip_area {
+        let tip = texts::tui_codex_official_no_api_key_tip();
+        frame.render_widget(
+            Paragraph::new(Line::raw(format!("  {}", tip)))
+                .style(Style::default().fg(theme.warn).add_modifier(Modifier::BOLD))
+                .wrap(Wrap { trim: false }),
+            area,
+        );
+    }
+
+    frame.render_stateful_widget(table, table_area, &mut state);
 
     // Editor / help line
     let editor_active = matches!(provider.focus, FormFocus::Fields) && provider.editing;
@@ -1440,8 +1591,8 @@ fn render_provider_add_form(
         } else {
             texts::tui_form_input_title()
         });
-    frame.render_widget(editor_block.clone(), fields_chunks[1]);
-    let editor_inner = editor_block.inner(fields_chunks[1]);
+    frame.render_widget(editor_block.clone(), editor_area);
+    let editor_inner = editor_block.inner(editor_area);
 
     let selected = fields
         .get(provider.field_idx.min(fields.len().saturating_sub(1)))
@@ -1475,23 +1626,79 @@ fn render_provider_add_form(
         );
     }
 
-    // JSON Preview (settingsConfig only, matching upstream UI)
-    let provider_json_value = provider
-        .to_provider_json_value_with_common_config(&data.config.common_snippet)
-        .unwrap_or_else(|_| provider.to_provider_json_value());
-    let json_value = provider_json_value
-        .get("settingsConfig")
-        .cloned()
-        .unwrap_or_else(|| serde_json::Value::Object(serde_json::Map::new()));
-    let json_text = serde_json::to_string_pretty(&json_value).unwrap_or_else(|_| "{}".to_string());
-    render_form_json_preview(
-        frame,
-        &json_text,
-        provider.json_scroll,
-        matches!(provider.focus, FormFocus::JsonPreview),
-        body[1],
-        theme,
-    );
+    if matches!(provider.app_type, AppType::Codex) {
+        let provider_json_value = provider.to_provider_json_value();
+        let settings_value = provider_json_value
+            .get("settingsConfig")
+            .cloned()
+            .unwrap_or_else(|| Value::Object(serde_json::Map::new()));
+
+        let auth_value = settings_value
+            .get("auth")
+            .cloned()
+            .unwrap_or_else(|| Value::Object(serde_json::Map::new()));
+        let auth_value = if auth_value.is_object() {
+            auth_value
+        } else {
+            Value::Object(serde_json::Map::new())
+        };
+        let auth_text =
+            serde_json::to_string_pretty(&auth_value).unwrap_or_else(|_| "{}".to_string());
+
+        let config_text = settings_value
+            .get("config")
+            .and_then(|value| value.as_str())
+            .unwrap_or("");
+
+        let preview = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .split(body[1]);
+
+        let preview_active = matches!(provider.focus, FormFocus::JsonPreview);
+        let auth_active =
+            preview_active && matches!(provider.codex_preview_section, CodexPreviewSection::Auth);
+        let config_active =
+            preview_active && matches!(provider.codex_preview_section, CodexPreviewSection::Config);
+
+        render_form_text_preview(
+            frame,
+            texts::tui_codex_auth_json_title(),
+            &auth_text,
+            provider.codex_auth_scroll,
+            auth_active,
+            preview[0],
+            theme,
+        );
+        render_form_text_preview(
+            frame,
+            texts::tui_codex_config_toml_title(),
+            config_text,
+            provider.codex_config_scroll,
+            config_active,
+            preview[1],
+            theme,
+        );
+    } else {
+        // JSON Preview (settingsConfig only, matching upstream UI)
+        let provider_json_value = provider
+            .to_provider_json_value_with_common_config(&data.config.common_snippet)
+            .unwrap_or_else(|_| provider.to_provider_json_value());
+        let json_value = provider_json_value
+            .get("settingsConfig")
+            .cloned()
+            .unwrap_or_else(|| Value::Object(serde_json::Map::new()));
+        let json_text =
+            serde_json::to_string_pretty(&json_value).unwrap_or_else(|_| "{}".to_string());
+        render_form_json_preview(
+            frame,
+            &json_text,
+            provider.json_scroll,
+            matches!(provider.focus, FormFocus::JsonPreview),
+            body[1],
+            theme,
+        );
+    }
 }
 
 fn provider_field_label_and_value(
@@ -1526,6 +1733,8 @@ fn provider_field_label_and_value(
         ProviderAddField::GeminiApiKey => texts::tui_label_api_key().to_string(),
         ProviderAddField::GeminiBaseUrl => texts::tui_label_base_url().to_string(),
         ProviderAddField::GeminiModel => texts::model_label().to_string(),
+        ProviderAddField::CommonConfigDivider => "- - - - - - - - -".to_string(),
+        ProviderAddField::CommonSnippet => texts::tui_config_item_common_snippet().to_string(),
         ProviderAddField::IncludeCommonConfig => texts::tui_form_attach_common_config().to_string(),
     };
 
@@ -1552,6 +1761,8 @@ fn provider_field_label_and_value(
             GeminiAuthType::OAuth => "oauth".to_string(),
             GeminiAuthType::ApiKey => "api_key".to_string(),
         },
+        ProviderAddField::CommonConfigDivider => "- - - - - - - - - -".to_string(),
+        ProviderAddField::CommonSnippet => texts::tui_key_open().to_string(),
         _ => provider
             .input(field)
             .map(|v| v.value.trim().to_string())
@@ -1601,6 +1812,7 @@ fn provider_field_editor_line(
             ProviderAddField::ClaudeModelConfig => {
                 texts::tui_claude_model_config_open_hint().to_string()
             }
+            ProviderAddField::CommonConfigDivider => String::new(),
             ProviderAddField::IncludeCommonConfig => {
                 format!("apply_common_config = {}", provider.include_common_config)
             }
@@ -1650,7 +1862,7 @@ fn render_mcp_add_form(
         frame,
         chunks[0],
         theme,
-        &add_form_key_items(mcp.focus, mcp.editing),
+        &add_form_key_items(mcp.focus, mcp.editing, false),
     );
 
     if matches!(mcp.mode, super::form::FormMode::Add) {
@@ -1689,22 +1901,37 @@ fn render_mcp_add_form(
         .split(fields_inner);
 
     let fields = mcp.fields();
+    let rows_data = fields
+        .iter()
+        .map(|field| mcp_field_label_and_value(mcp, *field))
+        .collect::<Vec<_>>();
+
+    let label_col_width = field_label_column_width(
+        rows_data
+            .iter()
+            .map(|(label, _value)| label.as_str())
+            .chain(std::iter::once(texts::tui_header_field())),
+        1,
+    );
+
     let header = Row::new(vec![
-        Cell::from(pad2(texts::tui_header_field())),
+        Cell::from(pad1(texts::tui_header_field())),
         Cell::from(texts::tui_header_value()),
     ])
     .style(Style::default().fg(theme.dim).add_modifier(Modifier::BOLD));
 
-    let rows = fields.iter().map(|field| {
-        let (label, value) = mcp_field_label_and_value(mcp, *field);
-        Row::new(vec![Cell::from(pad2(&label)), Cell::from(value)])
-    });
+    let rows = rows_data
+        .iter()
+        .map(|(label, value)| Row::new(vec![Cell::from(pad1(label)), Cell::from(value.clone())]));
 
-    let table = Table::new(rows, [Constraint::Length(22), Constraint::Min(10)])
-        .header(header)
-        .block(Block::default().borders(Borders::NONE))
-        .row_highlight_style(selection_style(theme))
-        .highlight_symbol(highlight_symbol(theme));
+    let table = Table::new(
+        rows,
+        [Constraint::Length(label_col_width), Constraint::Min(10)],
+    )
+    .header(header)
+    .block(Block::default().borders(Borders::NONE))
+    .row_highlight_style(selection_style(theme))
+    .highlight_symbol(highlight_symbol(theme));
 
     let mut state = TableState::default();
     if !fields.is_empty() {
@@ -1847,6 +2074,18 @@ fn split_filter_area(area: Rect, app: &App) -> (Option<Rect>, Rect) {
         .split(area);
 
     (Some(chunks[0]), chunks[1])
+}
+
+fn field_label_column_width<'a, I>(labels: I, left_padding: u16) -> u16
+where
+    I: IntoIterator<Item = &'a str>,
+{
+    let max = labels
+        .into_iter()
+        .map(|label| UnicodeWidthStr::width(label) as u16)
+        .max()
+        .unwrap_or(0);
+    max.saturating_add(left_padding)
 }
 
 fn render_filter_bar(frame: &mut Frame<'_>, app: &App, area: Rect, theme: &super::theme::Theme) {
@@ -2082,7 +2321,7 @@ fn render_main(
 
     frame.render_widget(block, area);
 
-    let top = inset_left(chunks[0], 2);
+    let top = inset_left(chunks[0], CONTENT_INSET_LEFT);
     let top_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -2392,7 +2631,7 @@ fn render_providers(
     let mut state = TableState::default();
     state.select(Some(app.provider_idx));
 
-    frame.render_stateful_widget(table, inset_left(chunks[1], 2), &mut state);
+    frame.render_stateful_widget(table, inset_left(chunks[1], CONTENT_INSET_LEFT), &mut state);
 }
 
 fn render_provider_detail(
@@ -2510,7 +2749,7 @@ fn render_provider_detail(
         Paragraph::new(lines)
             .block(Block::default().borders(Borders::NONE))
             .wrap(Wrap { trim: false }),
-        inset_left(chunks[1], 2),
+        inset_left(chunks[1], CONTENT_INSET_LEFT),
     );
 }
 
@@ -2538,7 +2777,7 @@ fn render_mcp(
     let visible = mcp_rows_filtered(app, data);
 
     let header = Row::new(vec![
-        Cell::from(pad2(texts::header_name())),
+        Cell::from(texts::header_name()),
         Cell::from(crate::app_config::AppType::Claude.as_str()),
         Cell::from(crate::app_config::AppType::Codex.as_str()),
         Cell::from(crate::app_config::AppType::Gemini.as_str()),
@@ -2547,7 +2786,7 @@ fn render_mcp(
 
     let rows = visible.iter().map(|row| {
         Row::new(vec![
-            Cell::from(pad2(&row.server.name)),
+            Cell::from(row.server.name.clone()),
             Cell::from(if row.server.apps.claude {
                 texts::tui_marker_active()
             } else {
@@ -2613,7 +2852,7 @@ fn render_mcp(
     let mut state = TableState::default();
     state.select(Some(app.mcp_idx));
 
-    frame.render_stateful_widget(table, inset_left(chunks[1], 2), &mut state);
+    frame.render_stateful_widget(table, inset_left(chunks[1], CONTENT_INSET_LEFT), &mut state);
 }
 
 fn render_prompts(
@@ -2698,7 +2937,7 @@ fn render_prompts(
 
     let mut state = TableState::default();
     state.select(Some(app.prompt_idx));
-    frame.render_stateful_widget(table, inset_left(chunks[1], 2), &mut state);
+    frame.render_stateful_widget(table, inset_left(chunks[1], CONTENT_INSET_LEFT), &mut state);
 }
 
 fn config_items_filtered(app: &App) -> Vec<ConfigItem> {
@@ -2761,7 +3000,7 @@ fn render_config(
     let items = config_items_filtered(app);
     let rows = items
         .iter()
-        .map(|item| Row::new(vec![Cell::from(pad2(config_item_label(item)))]));
+        .map(|item| Row::new(vec![Cell::from(config_item_label(item))]));
 
     let outer = Block::default()
         .borders(Borders::ALL)
@@ -2791,7 +3030,7 @@ fn render_config(
 
     let mut state = TableState::default();
     state.select(Some(app.config_idx));
-    frame.render_stateful_widget(table, inset_left(chunks[1], 2), &mut state);
+    frame.render_stateful_widget(table, inset_left(chunks[1], CONTENT_INSET_LEFT), &mut state);
 }
 
 fn render_config_webdav(
@@ -2804,7 +3043,7 @@ fn render_config_webdav(
     let items = webdav_config_items_filtered(app);
     let rows = items
         .iter()
-        .map(|item| Row::new(vec![Cell::from(pad2(webdav_config_item_label(item)))]));
+        .map(|item| Row::new(vec![Cell::from(webdav_config_item_label(item))]));
 
     let outer = Block::default()
         .borders(Borders::ALL)
@@ -2837,40 +3076,52 @@ fn render_config_webdav(
 
     let mut state = TableState::default();
     state.select(Some(app.config_webdav_idx));
-    frame.render_stateful_widget(table, inset_left(chunks[1], 2), &mut state);
+    frame.render_stateful_widget(table, inset_left(chunks[1], CONTENT_INSET_LEFT), &mut state);
 }
 
 fn render_settings(frame: &mut Frame<'_>, app: &App, area: Rect, theme: &super::theme::Theme) {
-    let header = Row::new(vec![
-        Cell::from(pad2(texts::tui_settings_header_setting())),
-        Cell::from(pad2(texts::tui_settings_header_value())),
-    ])
-    .style(Style::default().fg(theme.dim).add_modifier(Modifier::BOLD));
-
     let language = crate::cli::i18n::current_language();
     let skip_claude_onboarding = crate::settings::get_skip_claude_onboarding();
 
-    let rows = super::app::SettingsItem::ALL.iter().map(|item| match item {
-        super::app::SettingsItem::Language => Row::new(vec![
-            Cell::from(pad2(texts::tui_settings_header_language())),
-            Cell::from(pad2(language.display_name())),
-        ]),
-        super::app::SettingsItem::SkipClaudeOnboarding => Row::new(vec![
-            Cell::from(pad2(texts::skip_claude_onboarding_label())),
-            Cell::from(pad2(if skip_claude_onboarding {
-                texts::enabled()
-            } else {
-                texts::disabled()
-            })),
-        ]),
-        super::app::SettingsItem::CheckForUpdates => {
-            let version = format!("v{}", env!("CARGO_PKG_VERSION"));
-            Row::new(vec![
-                Cell::from(pad2(texts::tui_settings_check_for_updates())),
-                Cell::from(format!("  {version}")),
-            ])
-        }
-    });
+    let rows_data = super::app::SettingsItem::ALL
+        .iter()
+        .map(|item| match item {
+            super::app::SettingsItem::Language => (
+                texts::tui_settings_header_language().to_string(),
+                language.display_name().to_string(),
+            ),
+            super::app::SettingsItem::SkipClaudeOnboarding => (
+                texts::skip_claude_onboarding_label().to_string(),
+                if skip_claude_onboarding {
+                    texts::enabled().to_string()
+                } else {
+                    texts::disabled().to_string()
+                },
+            ),
+            super::app::SettingsItem::CheckForUpdates => (
+                texts::tui_settings_check_for_updates().to_string(),
+                format!("v{}", env!("CARGO_PKG_VERSION")),
+            ),
+        })
+        .collect::<Vec<_>>();
+
+    let label_col_width = field_label_column_width(
+        rows_data
+            .iter()
+            .map(|(label, _value)| label.as_str())
+            .chain(std::iter::once(texts::tui_settings_header_setting())),
+        0,
+    );
+
+    let header = Row::new(vec![
+        Cell::from(texts::tui_settings_header_setting()),
+        Cell::from(texts::tui_settings_header_value()),
+    ])
+    .style(Style::default().fg(theme.dim).add_modifier(Modifier::BOLD));
+
+    let rows = rows_data
+        .iter()
+        .map(|(label, value)| Row::new(vec![Cell::from(label.clone()), Cell::from(value.clone())]));
 
     let outer = Block::default()
         .borders(Borders::ALL)
@@ -2894,15 +3145,18 @@ fn render_settings(frame: &mut Frame<'_>, app: &App, area: Rect, theme: &super::
         );
     }
 
-    let table = Table::new(rows, [Constraint::Min(24), Constraint::Min(10)])
-        .header(header)
-        .block(Block::default().borders(Borders::NONE))
-        .row_highlight_style(selection_style(theme))
-        .highlight_symbol(highlight_symbol(theme));
+    let table = Table::new(
+        rows,
+        [Constraint::Length(label_col_width), Constraint::Min(10)],
+    )
+    .header(header)
+    .block(Block::default().borders(Borders::NONE))
+    .row_highlight_style(selection_style(theme))
+    .highlight_symbol(highlight_symbol(theme));
 
     let mut state = TableState::default();
     state.select(Some(app.settings_idx));
-    frame.render_stateful_widget(table, inset_left(chunks[1], 2), &mut state);
+    frame.render_stateful_widget(table, inset_left(chunks[1], CONTENT_INSET_LEFT), &mut state);
 }
 
 fn render_footer(frame: &mut Frame<'_>, app: &App, area: Rect, theme: &super::theme::Theme) {
@@ -2964,7 +3218,7 @@ fn render_footer(frame: &mut Frame<'_>, app: &App, area: Rect, theme: &super::th
 }
 
 fn render_overlay(frame: &mut Frame<'_>, app: &App, data: &UiData, theme: &super::theme::Theme) {
-    let content_area = content_pane_rect(frame.area());
+    let content_area = content_pane_rect(frame.area(), theme);
 
     match &app.overlay {
         Overlay::None => {}
@@ -3205,7 +3459,49 @@ fn render_overlay(frame: &mut Frame<'_>, app: &App, data: &UiData, theme: &super
 
             frame.render_widget(Paragraph::new(shown).wrap(Wrap { trim: false }), chunks[1]);
         }
-        Overlay::CommonSnippetView(view) => {
+        Overlay::CommonSnippetPicker { selected } => {
+            let area = centered_rect(48, 38, content_area);
+            frame.render_widget(Clear, area);
+
+            let outer = Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Plain)
+                .border_style(Style::default().fg(theme.dim))
+                .title(texts::tui_config_item_common_snippet());
+            frame.render_widget(outer.clone(), area);
+            let inner = outer.inner(area);
+
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Length(1), Constraint::Min(0)])
+                .split(inner);
+
+            render_key_bar_center(
+                frame,
+                chunks[0],
+                theme,
+                &[
+                    ("↑↓", texts::tui_key_select()),
+                    ("Enter", texts::tui_key_view()),
+                    ("e", texts::tui_key_edit()),
+                    ("Esc", texts::tui_key_close()),
+                ],
+            );
+
+            let labels = ["Claude", "Codex", "Gemini"];
+            let items = labels
+                .iter()
+                .map(|label| ListItem::new(Line::from(Span::raw(label.to_string()))));
+
+            let list = List::new(items)
+                .highlight_style(selection_style(theme))
+                .highlight_symbol(highlight_symbol(theme));
+
+            let mut state = ListState::default();
+            state.select(Some(*selected));
+            frame.render_stateful_widget(list, chunks[1], &mut state);
+        }
+        Overlay::CommonSnippetView { view, .. } => {
             let area = centered_rect(90, 90, content_area);
             frame.render_widget(Clear, area);
 
@@ -3300,8 +3596,16 @@ fn render_overlay(frame: &mut Frame<'_>, app: &App, data: &UiData, theme: &super
                     texts::tui_claude_default_opus_model_label(),
                 ];
 
+                let label_col_width = field_label_column_width(
+                    labels
+                        .iter()
+                        .copied()
+                        .chain(std::iter::once(texts::tui_header_field())),
+                    1,
+                );
+
                 let header = Row::new(vec![
-                    Cell::from(pad2(texts::tui_header_field())),
+                    Cell::from(pad1(texts::tui_header_field())),
                     Cell::from(texts::tui_header_value()),
                 ])
                 .style(Style::default().fg(theme.dim).add_modifier(Modifier::BOLD));
@@ -3312,18 +3616,21 @@ fn render_overlay(frame: &mut Frame<'_>, app: &App, data: &UiData, theme: &super
                         .map(|input| input.value.trim().to_string())
                         .filter(|value| !value.is_empty())
                         .unwrap_or_else(|| texts::tui_na().to_string());
-                    Row::new(vec![Cell::from(pad2(label)), Cell::from(value)])
+                    Row::new(vec![Cell::from(pad1(label)), Cell::from(value)])
                 });
 
-                let table = Table::new(rows, [Constraint::Length(29), Constraint::Min(10)])
-                    .header(header)
-                    .block(
-                        Block::default()
-                            .borders(Borders::ALL)
-                            .title(texts::tui_form_fields_title()),
-                    )
-                    .row_highlight_style(selection_style(theme))
-                    .highlight_symbol(highlight_symbol(theme));
+                let table = Table::new(
+                    rows,
+                    [Constraint::Length(label_col_width), Constraint::Min(10)],
+                )
+                .header(header)
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title(texts::tui_form_fields_title()),
+                )
+                .row_highlight_style(selection_style(theme))
+                .highlight_symbol(highlight_symbol(theme));
 
                 let mut state = TableState::default();
                 state.select(Some((*selected).min(labels.len().saturating_sub(1))));
@@ -3752,7 +4059,7 @@ fn render_overlay(frame: &mut Frame<'_>, app: &App, data: &UiData, theme: &super
     }
 }
 
-fn content_pane_rect(area: Rect) -> Rect {
+fn content_pane_rect(area: Rect, theme: &super::theme::Theme) -> Rect {
     let root = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -3764,7 +4071,10 @@ fn content_pane_rect(area: Rect) -> Rect {
 
     let body = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(30), Constraint::Min(0)])
+        .constraints([
+            Constraint::Length(nav_pane_width(theme)),
+            Constraint::Min(0),
+        ])
         .split(root[1]);
 
     body[1]
@@ -4043,6 +4353,40 @@ mod tests {
     }
 
     #[test]
+    fn provider_form_fields_show_dashed_divider_before_common_snippet() {
+        let _lock = lock_env();
+        let _no_color = EnvGuard::remove("NO_COLOR");
+
+        let mut app = App::new(Some(AppType::Claude));
+        app.route = Route::Providers;
+        app.focus = Focus::Content;
+        app.form = Some(crate::cli::tui::form::FormState::ProviderAdd(
+            crate::cli::tui::form::ProviderAddFormState::new(AppType::Claude),
+        ));
+
+        let data = minimal_data(&app.app_type);
+        let buf = render(&app, &data);
+
+        // The label is clipped to the first column width; search for a stable substring.
+        let common_label = "Snipp";
+        let mut common_y = None;
+        for y in 0..buf.area.height {
+            let line = line_at(&buf, y);
+            if line.contains(common_label) {
+                common_y = Some(y);
+                break;
+            }
+        }
+
+        let common_y = common_y.expect("Common Config Snippet row missing from provider form");
+        let above = line_at(&buf, common_y.saturating_sub(1));
+        assert!(
+            above.contains("┄┄┄"),
+            "expected dashed divider row above common snippet, got: {above}"
+        );
+    }
+
+    #[test]
     fn header_is_wrapped_in_a_rect_block() {
         let _lock = lock_env();
         let _no_color = EnvGuard::remove("NO_COLOR");
@@ -4059,6 +4403,46 @@ mod tests {
     }
 
     #[test]
+    fn nav_icons_have_left_padding_from_border() {
+        let _lock = lock_env();
+        let _no_color = EnvGuard::remove("NO_COLOR");
+
+        let app = App::new(Some(AppType::Claude));
+        let data = minimal_data(&app.app_type);
+        let buf = render(&app, &data);
+
+        let mut home_line = None;
+        for y in 0..buf.area.height {
+            let line = line_at(&buf, y);
+            if line.contains("Home") && line.contains("🏠") {
+                home_line = Some(line);
+                break;
+            }
+        }
+
+        let home_line = home_line.expect("Home row missing from nav");
+        let emoji_idx = home_line
+            .find("🏠")
+            .expect("Home emoji missing from nav row");
+        let emoji_char_idx = home_line[..emoji_idx].chars().count();
+        let chars: Vec<char> = home_line.chars().collect();
+        assert!(
+            emoji_char_idx >= 2,
+            "expected at least 2 chars before emoji, got line: {home_line}"
+        );
+        assert_eq!(
+            chars[emoji_char_idx.saturating_sub(2)],
+            '│',
+            "expected nav border immediately before padding space, got line: {home_line}"
+        );
+        assert_eq!(
+            chars[emoji_char_idx.saturating_sub(1)],
+            ' ',
+            "expected a 1-cell padding between nav border and emoji, got line: {home_line}"
+        );
+    }
+
+    #[test]
     fn providers_pane_has_border_and_selected_row_is_accent() {
         let _lock = lock_env();
         let _no_color = EnvGuard::remove("NO_COLOR");
@@ -4071,8 +4455,8 @@ mod tests {
         let buf = render(&app, &data);
         let theme = theme_for(&app.app_type);
 
-        // Providers content area starts at x=30, y=3 (header=3 rows).
-        let border_cell = &buf[(30, 3)];
+        let content = super::content_pane_rect(buf.area, &theme);
+        let border_cell = &buf[(content.x, content.y)];
         assert_eq!(border_cell.symbol(), "┌");
         assert_eq!(border_cell.fg, theme.accent);
 
@@ -4082,8 +4466,10 @@ mod tests {
         // - hint row (1)
         // - table header row (1)
         // - first data row (selected) (1)
-        // Table is inset by 2 cells inside the content pane.
-        let selected_row_cell = &buf[(33, 3 + 1 + 1 + 1)];
+        let selected_row_cell = &buf[(
+            content.x.saturating_add(2 + super::CONTENT_INSET_LEFT),
+            content.y.saturating_add(1 + 1 + 1),
+        )];
         assert_eq!(selected_row_cell.bg, theme.accent);
     }
 
@@ -4104,7 +4490,9 @@ mod tests {
             "Demo Editor",
             EditorKind::Json,
             initial,
-            EditorSubmit::ConfigCommonSnippet,
+            EditorSubmit::ConfigCommonSnippet {
+                app_type: app.app_type.clone(),
+            },
         );
 
         let editor = app.editor.as_mut().expect("editor opened");
@@ -4380,23 +4768,23 @@ mod tests {
 
         let buf = render(&app, &data);
 
-        // Overlay area for centered_rect_fixed(70,12) in a 120x40 terminal content pane:
-        // header height = 3, footer height = 1, nav width = 30 => content = (30,3,90,36)
-        // centered => top-left = (30 + (90-70)/2, 3 + (36-12)/2) = (40, 15)
-        let area_x = 40;
-        let area_y = 15;
-        let area_w = 70;
-        let area_h = 12;
+        let theme = theme_for(&app.app_type);
+        let content = super::content_pane_rect(buf.area, &theme);
+        let area = super::centered_rect_fixed(70, 12, content);
+        let area_x = area.x;
+        let area_y = area.y;
+        let area_w = area.width;
+        let area_h = area.height;
 
         // Outer border exists at (18,13). We also expect an inner input field border (another ┌)
         // somewhere inside the overlay.
         let mut inner_top_left_count = 0usize;
-        for y in area_y..(area_y + area_h) {
-            for x in area_x..(area_x + area_w) {
+        for y in area_y..area_y.saturating_add(area_h) {
+            for x in area_x..area_x.saturating_add(area_w) {
                 if x == area_x && y == area_y {
                     continue;
                 }
-                if buf[(x as u16, y as u16)].symbol() == "┌" {
+                if buf[(x, y)].symbol() == "┌" {
                     inner_top_left_count += 1;
                 }
             }
@@ -4445,17 +4833,17 @@ mod tests {
             "expected cancel action hint in confirm overlay key bar"
         );
 
-        // Overlay area for centered_rect_fixed(60,7) in a 120x40 terminal content pane:
-        // header height = 3, footer height = 1, nav width = 30 => content = (30,3,90,36)
-        // centered => top-left = (30 + (90-60)/2, 3 + (36-7)/2) = (45, 17)
-        let area_x = 45;
-        let area_y = 17;
-        let area_w = 60;
-        let area_h = 7;
+        let theme = theme_for(&app.app_type);
+        let content = super::content_pane_rect(buf.area, &theme);
+        let area = super::centered_rect_fixed(60, 7, content);
 
-        assert_eq!(buf[(area_x, area_y)].symbol(), "┌");
+        assert_eq!(buf[(area.x, area.y)].symbol(), "┌");
         assert_eq!(
-            buf[(area_x + area_w - 1, area_y + area_h - 1)].symbol(),
+            buf[(
+                area.x.saturating_add(area.width.saturating_sub(1)),
+                area.y.saturating_add(area.height.saturating_sub(1))
+            )]
+                .symbol(),
             "┘"
         );
     }
@@ -4474,11 +4862,14 @@ mod tests {
         let mut app = App::new(Some(AppType::Claude));
         app.route = Route::Config;
         app.focus = Focus::Content;
-        app.overlay = Overlay::CommonSnippetView(crate::cli::tui::app::TextViewState {
-            title: "Common Snippet".to_string(),
-            lines: vec!["{}".to_string()],
-            scroll: 0,
-        });
+        app.overlay = Overlay::CommonSnippetView {
+            app_type: AppType::Claude,
+            view: crate::cli::tui::app::TextViewState {
+                title: "Common Snippet".to_string(),
+                lines: vec!["{}".to_string()],
+                scroll: 0,
+            },
+        };
         let data = minimal_data(&app.app_type);
 
         let buf = render(&app, &data);
